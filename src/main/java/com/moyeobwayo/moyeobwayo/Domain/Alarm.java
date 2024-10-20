@@ -2,17 +2,20 @@ package com.moyeobwayo.moyeobwayo.Domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor @AllArgsConstructor
 public class Alarm {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int alarmId;
+    private Long alarmId;
 
     private boolean alarm_on = true;
 
