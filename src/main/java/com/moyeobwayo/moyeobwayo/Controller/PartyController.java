@@ -1,6 +1,7 @@
 package com.moyeobwayo.moyeobwayo.Controller;
 
 import com.moyeobwayo.moyeobwayo.Domain.Party;
+import com.moyeobwayo.moyeobwayo.Domain.dto.PartyResponseDTO;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCompleteRequest;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCreateRequest;
 import com.moyeobwayo.moyeobwayo.Service.PartyService;
@@ -67,17 +68,17 @@ public class PartyController {
 //        return ResponseEntity.ok(availableTimes);
 //    }
     @GetMapping("/{id}")
-    public ResponseEntity<?> getParty(@PathVariable("id") String id) {
+    public ResponseEntity<PartyResponseDTO> getParty(@PathVariable("id") String id) {
+        PartyResponseDTO partyResponseDTO = new PartyResponseDTO();
         Party party = partyService.findPartyById(id);
         List<AvailableTime> availableTimes = partyService.findAvailableTimesForParty(id);
 
         // 3. 두 데이터를 하나의 Map에 담기
-        Map<String, Object> response = new HashMap<>();
-        response.put("party", party);  // 파티 정보 추가
-        response.put("availableTimes", availableTimes);  // 우선순위 시간 정보 추가
+        partyResponseDTO.setParty(party);  // 파티 정보 추가
+        partyResponseDTO.setAvailableTime(availableTimes);  // 우선순위 시간 정보 추가
 
         // 4. Map을 JSON으로 반환
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(partyResponseDTO);
     }
 
     /**
