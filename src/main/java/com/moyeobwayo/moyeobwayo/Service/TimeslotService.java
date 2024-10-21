@@ -43,11 +43,11 @@ public class TimeslotService {
                 .orElseThrow(() -> new IllegalArgumentException("날짜를 찾을 수 없습니다: " + dto.getDate_id()));
 
         Timeslot timeslot = new Timeslot();
-        timeslot.setSelected_start_time(dto.getSelected_start_time());
-        timeslot.setSelected_end_time(dto.getSelected_end_time());
+        timeslot.setSelectedStartTime(dto.getSelected_start_time());
+        timeslot.setSelectedEndTime(dto.getSelected_end_time());
         timeslot.setUserEntity(user);
         timeslot.setDate(date);
-
+        //해당 유저가 파티에 참여인원으로 있는지 확인해야함
         Timeslot createdTimeslot = timeslotRepository.save(timeslot);
         return convertToDTO(createdTimeslot);
     }
@@ -61,8 +61,8 @@ public class TimeslotService {
             throw new IllegalArgumentException("시작 시간은 종료 시간보다 이전이어야 합니다.");
         }
 
-        existingTimeslot.setSelected_start_time(selectedStartTime);
-        existingTimeslot.setSelected_end_time(selectedEndTime);
+        existingTimeslot.setSelectedStartTime(selectedStartTime);
+        existingTimeslot.setSelectedEndTime(selectedEndTime);
 
         Timeslot updatedTimeslot = timeslotRepository.save(existingTimeslot);
         return convertToDTO(updatedTimeslot);
@@ -79,12 +79,12 @@ public class TimeslotService {
     // Timeslot 객체를 TimeslotResponseDTO로 변환
     private TimeslotResponseDTO convertToDTO(Timeslot timeslot) {
         return new TimeslotResponseDTO(
-                timeslot.getSlot_id(),
-                timeslot.getSelected_start_time(),
-                timeslot.getSelected_end_time(),
-                timeslot.getUserEntity().getUser_id(),
+                timeslot.getSlotId(),
+                timeslot.getSelectedStartTime(),
+                timeslot.getSelectedEndTime(),
+                timeslot.getUserEntity().getUserId(),
                 timeslot.getDate().getParty().getPartyId(),
-                timeslot.getDate().getDate_id()
+                timeslot.getDate().getDateId()
         );
     }
 }

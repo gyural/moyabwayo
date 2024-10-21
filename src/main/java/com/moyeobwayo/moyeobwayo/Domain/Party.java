@@ -20,16 +20,16 @@ public class Party {
     // @GeneratedValue(strategy = GenerationType.IDENTITY)
     // private int party_id;
 
-    private int target_num;
-    private int current_num;
-    private String party_name;
-    private String party_description;
-    private Date start_date;
-    private String location_name;
+    private int targetNum;
+    private int currentNum;
+    private String partyName;
+    private String partyDescription;
+    private Date startDate;
+    private String locationName;
     @Column(name = "end_date") // jpa를 통한 삭제를 위해(카멜형으로)
     private Date endDate;
-    private Date decision_date;
-    private String user_id; // 새롭게 추가
+    private Date decisionDate;
+    private String userId; // 새롭게 추가
 
     @OneToMany(mappedBy = "party")
     //@JsonIgnore  // 순환 참조 방지

@@ -98,8 +98,8 @@ public class PartyService {
             Date reqDate = partyCompleteRequest.getCompleteTime();
             String locationName = partyCompleteRequest.getLocationName() != null ? partyCompleteRequest.getLocationName() : "미정";
             // 확정 시간 DB 반영
-            party.setDecision_date(reqDate);
-            party.setLocation_name(locationName);
+            party.setDecisionDate(reqDate);
+            party.setLocationName(locationName);
             try {
                 List<UserEntity> possibleUsers = getPossibleUsers(party, reqDate);
                 // 메시지 전송
@@ -112,7 +112,7 @@ public class PartyService {
         }else{
             // 확정 시간 DB 반영
             Date reqDate = partyCompleteRequest.getCompleteTime();
-            party.setDecision_date(reqDate);
+            party.setDecisionDate(reqDate);
             return ResponseEntity.ok(party);
         }
     }
@@ -177,13 +177,13 @@ public class PartyService {
 
             // 파티 객체 생성 및 Party 테이블에 삽입
             Party party = new Party();
-            party.setTarget_num(partyCreateRequest.getParticipants());
-            party.setParty_name(partyCreateRequest.getPartyTitle());
-            party.setParty_description(partyCreateRequest.getPartyDescription());
-            party.setStart_date(partyCreateRequest.getStartTime());
+            party.setTargetNum(partyCreateRequest.getParticipants());
+            party.setPartyName(partyCreateRequest.getPartyTitle());
+            party.setPartyDescription(partyCreateRequest.getPartyDescription());
+            party.setStartDate(partyCreateRequest.getStartTime());
             party.setEndDate(partyCreateRequest.getEndTime());
-            party.setDecision_date(partyCreateRequest.getDecisionDate());
-            party.setUser_id(partyCreateRequest.getUserId());
+            party.setDecisionDate(partyCreateRequest.getDecisionDate());
+            party.setUserId(partyCreateRequest.getUserId());
             party= partyRepository.save(party); // db에 저장 후 저장된 객체 반환(자동 생성된 id를 가져오기 위해)
 
             // 방금 생성한 Party 테이블 튜플의 pk 가져오기
@@ -229,9 +229,9 @@ public class PartyService {
         for (DateEntity date : party.getDates()) {
             List<Timeslot> timeslots = timeslotRepository.findAllByDate(date);
             for (Timeslot slot : timeslots) {
-                LocalDateTime start = slot.getSelected_start_time().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-                LocalDateTime end = slot.getSelected_end_time().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-                timeSlots.add(new TimeSlot(slot.getUserEntity().getUser_name(), start, end));
+                LocalDateTime start = slot.getSelectedStartTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                LocalDateTime end = slot.getSelectedEndTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+                timeSlots.add(new TimeSlot(slot.getUserEntity().getUserName(), start, end));
             }
         }
 
@@ -320,13 +320,13 @@ public class PartyService {
 
 
             // 2. 수정할 필드 업데이트
-            existingParty.setTarget_num(partyUpdateRequest.getParticipants());
-            existingParty.setParty_name(partyUpdateRequest.getPartyTitle());
-            existingParty.setParty_description(partyUpdateRequest.getPartyDescription());
-            existingParty.setStart_date(partyUpdateRequest.getStartTime());
+            existingParty.setTargetNum(partyUpdateRequest.getParticipants());
+            existingParty.setPartyName(partyUpdateRequest.getPartyTitle());
+            existingParty.setPartyDescription(partyUpdateRequest.getPartyDescription());
+            existingParty.setStartDate(partyUpdateRequest.getStartTime());
             existingParty.setEndDate(partyUpdateRequest.getEndTime());
-            existingParty.setDecision_date(partyUpdateRequest.getDecisionDate());
-            existingParty.setUser_id(partyUpdateRequest.getUserId());
+            existingParty.setDecisionDate(partyUpdateRequest.getDecisionDate());
+            existingParty.setUserId(partyUpdateRequest.getUserId());
 
             // 3. DateEntity 업데이트 (기존 리스트를 제거 후 새로 추가)
             List<DateEntity> existingDates = existingParty.getDates();

@@ -44,11 +44,11 @@ public class PartyResultTest {
     public void 파티결과테스트() {
         // Step 1: Create a party
         Party party = new Party();
-        party.setParty_name("Test Party");
-        party.setParty_description("This is a test party.");
-        party.setTarget_num(4);
-        party.setCurrent_num(0);
-        party.setStart_date(new Date());
+        party.setPartyName("Test Party");
+        party.setPartyDescription("This is a test party.");
+        party.setTargetNum(4);
+        party.setCurrentNum(0);
+        party.setStartDate(new Date());
         party.setEndDate(new Date(System.currentTimeMillis() + 86400000)); // 1 day later
 
         // Save the party
@@ -70,13 +70,13 @@ public class PartyResultTest {
 
         // Step 3: Create users
         UserEntity user1 = new UserEntity();
-        user1.setUser_name("user1");
+        user1.setUserName("user1");
         UserEntity user2 = new UserEntity();
-        user2.setUser_name("user2");
+        user2.setUserName("user2");
         UserEntity user3 = new UserEntity();
-        user3.setUser_name("user3");
+        user3.setUserName("user3");
         UserEntity user4 = new UserEntity();
-        user4.setUser_name("user4");
+        user4.setUserName("user4");
 
         // Save users
         userRepository.save(user1);
@@ -86,14 +86,14 @@ public class PartyResultTest {
 
         // Step 4: Create timeslots for users
         Timeslot timeslot1 = new Timeslot();
-        timeslot1.setSelected_start_time(new Date());
-        timeslot1.setSelected_end_time(new Date(System.currentTimeMillis() + 3600000)); // 1 hour
+        timeslot1.setSelectedStartTime(new Date());
+        timeslot1.setSelectedEndTime(new Date(System.currentTimeMillis() + 3600000)); // 1 hour
         timeslot1.setDate(dateEntities.get(0));
         timeslot1.setUserEntity(user1);
 
         Timeslot timeslot2 = new Timeslot();
-        timeslot2.setSelected_start_time(new Date());
-        timeslot2.setSelected_end_time(new Date(System.currentTimeMillis() + 7200000)); // 2 hours
+        timeslot2.setSelectedStartTime(new Date());
+        timeslot2.setSelectedEndTime(new Date(System.currentTimeMillis() + 7200000)); // 2 hours
         timeslot2.setDate(dateEntities.get(1));
         timeslot2.setUserEntity(user2);
 
@@ -102,7 +102,7 @@ public class PartyResultTest {
         timeslotRepository.save(timeslot2);
 
         // Step 5: Call the service method to get the available times
-        List<AvailableTime> availableTimes = partyService.findAvailableTimesForParty(savedParty.getParty_id());  // 수정
+        List<AvailableTime> availableTimes = partyService.findAvailableTimesForParty(savedParty.getPartyId());  // 수정
 
         // Step 6: Assertions to verify the results
         assertThat(availableTimes).isNotEmpty(); // 비어 있지 않은지

@@ -18,11 +18,11 @@ public interface UserEntityRepository extends JpaRepository<UserEntity, Long> {
     Optional<Long> findKakaoIDByPartyId(@Param("partyId") String partyId); // ★ partyId가 String으로 처리됨
 
     // ★ 파티 ID가 String으로 처리되도록 변경
-    @Query("SELECT u FROM UserEntity u WHERE u.user_name = :user_name AND u.party.partyId = :partyId")
-    Optional<UserEntity> findUserInSameParty(@Param("user_name") String user_name, @Param("partyId") String partyId);
+    @Query("SELECT u FROM UserEntity u WHERE u.userName = :userName AND u.party.partyId = :partyId")
+    Optional<UserEntity> findUserInSameParty(@Param("userName") String userName, @Param("partyId") String partyId);
 
     // ★ 파티 ID가 String으로 처리되도록 변경
-    @Query("SELECT u FROM UserEntity u WHERE u.user_id = :currentUserId AND u.party.partyId = :partyId")
+    @Query("SELECT u FROM UserEntity u WHERE u.userId = :currentUserId AND u.party.partyId = :partyId")
     Optional<UserEntity> findByIdAndPartyId(@Param("currentUserId") int currentUserId, @Param("partyId") String partyId);
 
     List<UserEntity> findUserEntitiesByKakaoProfile_KakaoUserId(Long kakaoUserId);

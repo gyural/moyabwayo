@@ -15,10 +15,10 @@ public class Timeslot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int slot_id;
+    private int slotId;
 
-    private Date selected_start_time;
-    private Date selected_end_time;
+    private Date selectedStartTime;
+    private Date selectedEndTime;
 
     @ManyToOne
     @JoinColumn(name = "date_id")

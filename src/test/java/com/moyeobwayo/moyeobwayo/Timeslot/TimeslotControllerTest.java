@@ -31,19 +31,19 @@ public class TimeslotControllerTest {
     @Test
     public void testCreateTimeslot() throws Exception {
         Timeslot timeslot = new Timeslot();
-        timeslot.setSlot_id(1);
-        timeslot.setSelected_start_time(new Date());
-        timeslot.setSelected_end_time(new Date());
+        timeslot.setSlotId(1);
+        timeslot.setSelectedStartTime(new Date());
+        timeslot.setSelectedEndTime(new Date());
 
         UserEntity userEntity = new UserEntity();
-        userEntity.setUser_id(9);
+        userEntity.setUserId(9L);
         timeslot.setUserEntity(userEntity);
 
         DateEntity dateEntity = new DateEntity();
-        dateEntity.setDate_id(2);
+        dateEntity.setDateId(2);
         timeslot.setDate(dateEntity);
 
-        Mockito.when(timeslotService.createTimeslot(Mockito.any(Timeslot.class))).thenReturn(timeslot);
+        //Mockito.when(timeslotService.createTimeslot(Mockito.any(Timeslot.class))).thenReturn(timeslot);
 
         mockMvc.perform(post("/api/v1/timeslots")
                         .contentType(MediaType.APPLICATION_JSON)

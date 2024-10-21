@@ -60,7 +60,7 @@ public class PartyTest {
         public void setup() {
             // 유효한 요청 데이터 기본 설정
             validRequest = new PartyCompleteRequest();
-            validRequest.setUserId(1);
+            validRequest.setUserId(1L);
             validRequest.setCompleteTime(new Date());
         }
 
@@ -95,36 +95,36 @@ public class PartyTest {
         public void testCompleteParty_DecisionDateSaved() throws Exception {
             // 파티와 유저 설정
             Party party = new Party();
-            party.setParty_name("testParty"); // 파티 이름 설정
+            party.setPartyName("testParty"); // 파티 이름 설정
             party = partyRepository.save(party); // 실제 DB에 저장
 
             UserEntity user = new UserEntity();
-            user.setUser_id(1);  // 유저 ID 설정
+            user.setUserId(1L);  // 유저 ID 설정
             userEntityRepository.save(user); // 유저도 DB에 저장
 
             // 요청 데이터 설정
             PartyCompleteRequest request = new PartyCompleteRequest();
             Date completeDate = new Date();  // 완료 날짜 설정
             request.setCompleteTime(completeDate);
-            request.setUserId(user.getUser_id());  // 유저 ID 설정
+            request.setUserId(user.getUserId());  // 유저 ID 설정
 
             // 요청 실행
-            mockMvc.perform(post("/api/v1/party/complete/" + party.getParty_id())
+            mockMvc.perform(post("/api/v1/party/complete/" + party.getPartyId())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk());  // 성공적인 응답 기대
 
             // 파티가 DB에 저장되었는지 확인
-            Party updatedParty = partyRepository.findById(party.getParty_id()).orElse(null);
+            Party updatedParty = partyRepository.findById(party.getPartyId()).orElse(null);
             assertNotNull(updatedParty); // 업데이트된 파티가 null이 아니어야 함
-            assertEquals(completeDate, updatedParty.getDecision_date()); // 완료 날짜 검증
+            assertEquals(completeDate, updatedParty.getDecisionDate()); // 완료 날짜 검증
         }
 
         @Test
         @Transactional
         public void 알람설정검증을_통한_확정메시지_보내기(){
             Party party = new Party();
-            party.setParty_name("testParty");
+            party.setPartyName("testParty");
 
             // Alarm 객체를 각각 Mocking
             Alarm mockAlarm1 = mock(Alarm.class);
