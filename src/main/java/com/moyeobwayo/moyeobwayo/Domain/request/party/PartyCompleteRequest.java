@@ -21,7 +21,7 @@ import java.util.TimeZone;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PartyCompleteRequest {
-    private Integer userId;
+    private Long userId;
     private Date completeTime;
     private String locationName;
     @PostConstruct

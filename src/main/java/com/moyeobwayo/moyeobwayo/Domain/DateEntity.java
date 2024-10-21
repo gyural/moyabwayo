@@ -14,7 +14,7 @@ import java.util.TimeZone;
 public class DateEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int date_id;
+    private int dateId;
 
     private java.util.Date selected_date;
 

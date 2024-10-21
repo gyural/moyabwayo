@@ -14,13 +14,13 @@ public class UserEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int user_id;
+    private Long userId;
 
     @ManyToOne
     @JoinColumn(name = "kakao_user_id", nullable = true) // 비어있어도 가능하도록 설정
     private KakaoProfile kakaoProfile; // 해당 table의 기본키를 참조
 
-    private String user_name;
+    private String userName;
     private String password;
 
     @OneToOne(mappedBy = "userEntity")

@@ -30,7 +30,7 @@ public class DateEntityRepositoryTest {
     public void setup() {
         // Set up a test party entity
         testParty = new Party();
-        testParty.setParty_name("Test Party");
+        testParty.setPartyName("Test Party");
         partyRepository.save(testParty);
 
         // Create a DateEntity with a specific date
@@ -46,7 +46,7 @@ public class DateEntityRepositoryTest {
         Date selectedDate = getDateWithoutTime(2, 0, 1); // 1일의 날짜 (시간 다름)
 
         // When
-        Integer dateId = dateEntityRepsitory.findDateIdByPartyAndSelectedDate(testParty.getParty_id(), selectedDate);
+        Integer dateId = dateEntityRepsitory.findDateIdByPartyAndSelectedDate(testParty.getPartyId(), selectedDate);
         // Then
         assertThat(dateId).isNotNull();
     }

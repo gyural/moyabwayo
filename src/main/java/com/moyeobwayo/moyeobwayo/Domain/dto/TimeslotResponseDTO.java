@@ -7,11 +7,11 @@ public class TimeslotResponseDTO {
     private int slot_id;
     private Date selected_start_time;
     private Date selected_end_time;
-    private int user_id;
+    private Long user_id;
     private String party_id;
     private int date_id;
 
-    public TimeslotResponseDTO(int slot_id, Date selected_start_time, Date selected_end_time, int user_id, String party_id, int date_id) {
+    public TimeslotResponseDTO(int slot_id, Date selected_start_time, Date selected_end_time, Long user_id, String party_id, int date_id) {
         this.slot_id = slot_id;
         this.selected_start_time = selected_start_time;
         this.selected_end_time = selected_end_time;
@@ -44,11 +44,11 @@ public class TimeslotResponseDTO {
         this.selected_end_time = selected_end_time;
     }
 
-    public int getUser_id() {
+    public Long getUser_id() {
         return user_id;
     }
 
-    public void setUser_id(int user_id) {
+    public void setUser_id(Long user_id) {
         this.user_id = user_id;
     }
 

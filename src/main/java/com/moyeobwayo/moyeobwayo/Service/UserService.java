@@ -51,7 +51,7 @@ public class UserService {
 
         // 사용자가 없으면 새로 회원가입 (회원가입 기능)
         UserEntity newUser = new UserEntity();
-        newUser.setUser_name(userName);
+        newUser.setUserName(userName);
         newUser.setPassword(password);
         newUser.setParty(party);
 

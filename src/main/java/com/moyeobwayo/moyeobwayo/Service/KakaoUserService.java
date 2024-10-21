@@ -99,7 +99,7 @@ public class KakaoUserService {
         String endTimeUTC = getEndTimeFromStartTime(completeDate);
 
         JSONObject schedule = new JSONObject();
-        schedule.put("title", "모여봐요 " + party.getParty_name());
+        schedule.put("title", "모여봐요 " + party.getPartyName());
         // 시간 설정
         JSONObject time = new JSONObject();
         time.put("start_at", startTimeUTC);
@@ -107,10 +107,10 @@ public class KakaoUserService {
         time.put("time_zone", "Asia/Seoul");
         schedule.put("time", time);
         // 설명 설정
-        schedule.put("description", party.getParty_description() != null ? party.getParty_description() : "기본 설명입니다.");
+        schedule.put("description", party.getPartyDescription() != null ? party.getPartyDescription() : "기본 설명입니다.");
         // 위치 설정
         JSONObject location = new JSONObject();
-        location.put("name", party.getLocation_name() != null ? party.getLocation_name() : "장소 미정");
+        location.put("name", party.getLocationName() != null ? party.getLocationName() : "장소 미정");
         location.put("location_id", 18577297);
         location.put("address", "고려대학교 세종캠퍼스");
         location.put("latitude", 36.610964);

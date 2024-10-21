@@ -28,13 +28,13 @@ public class PartyUpdateTest {
     public void 파티수정test() {
         // 기존 파티 생성
         Party party = new Party();
-        party.setParty_name("Original Party Name");
-        party.setParty_description("Original Description");
-        party.setTarget_num(5);
-        party.setCurrent_num(0);
-        party.setStart_date(new Date());
+        party.setPartyName("Original Party Name");
+        party.setPartyDescription("Original Description");
+        party.setTargetNum(5);
+        party.setCurrentNum(0);
+        party.setStartDate(new Date());
         party.setEndDate(new Date(System.currentTimeMillis() + 86400000)); // 1일 후
-        party.setUser_id("1234");
+        party.setUserId("1234");
 
         // 파티 저장
         Party savedParty = partyStringIdRepository.save(party);
@@ -58,12 +58,12 @@ public class PartyUpdateTest {
         Party updatedParty = partyStringIdRepository.findById(savedParty.getPartyId()).orElseThrow();
 
         // 업데이트 결과 검증
-        assertThat(updatedParty.getParty_name()).isEqualTo("Updated Party Name");
-        assertThat(updatedParty.getParty_description()).isEqualTo("Updated Description");
-        assertThat(updatedParty.getTarget_num()).isEqualTo(10);
-        assertThat(updatedParty.getCurrent_num()).isEqualTo(0); // 기존 값 유지
-        assertThat(updatedParty.getUser_id()).isEqualTo(5678); // user_id 변경 확인
-        assertThat(updatedParty.getStart_date()).isNotNull();
-        assertThat(updatedParty.getEndDate()).isAfter(updatedParty.getStart_date()); // 종료 날짜가 시작 날짜보다 이후인지 확인
+        assertThat(updatedParty.getPartyName()).isEqualTo("Updated Party Name");
+        assertThat(updatedParty.getPartyDescription()).isEqualTo("Updated Description");
+        assertThat(updatedParty.getTargetNum()).isEqualTo(10);
+        assertThat(updatedParty.getCurrentNum()).isEqualTo(0); // 기존 값 유지
+        assertThat(updatedParty.getUserId()).isEqualTo(5678); // user_id 변경 확인
+        assertThat(updatedParty.getStartDate()).isNotNull();
+        assertThat(updatedParty.getEndDate()).isAfter(updatedParty.getStartDate()); // 종료 날짜가 시작 날짜보다 이후인지 확인
     }
 }
