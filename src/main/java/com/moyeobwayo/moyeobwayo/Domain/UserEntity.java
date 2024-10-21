@@ -18,6 +18,7 @@ public class UserEntity {
 
     @ManyToOne
     @JoinColumn(name = "kakao_user_id", nullable = true) // 비어있어도 가능하도록 설정
+    @JsonIgnore
     private KakaoProfile kakaoProfile; // 해당 table의 기본키를 참조
 
     private String userName;
@@ -35,6 +36,7 @@ public class UserEntity {
     @JsonProperty("party")
     @ManyToOne
     @JoinColumn(name="partyId", nullable = true)
+    @JsonIgnore
     private Party party;
 
 
