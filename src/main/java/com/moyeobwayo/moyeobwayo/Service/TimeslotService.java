@@ -1,10 +1,12 @@
 package com.moyeobwayo.moyeobwayo.Service;
 
+import com.moyeobwayo.moyeobwayo.Domain.Party;
 import com.moyeobwayo.moyeobwayo.Domain.Timeslot;
 import com.moyeobwayo.moyeobwayo.Domain.UserEntity;
 import com.moyeobwayo.moyeobwayo.Domain.DateEntity;
 import com.moyeobwayo.moyeobwayo.Domain.dto.TimeslotRequestDTO;
 import com.moyeobwayo.moyeobwayo.Domain.dto.TimeslotResponseDTO;
+import com.moyeobwayo.moyeobwayo.Repository.PartyRepository;
 import com.moyeobwayo.moyeobwayo.Repository.TimeslotRepository;
 import com.moyeobwayo.moyeobwayo.Repository.UserEntityRepository;
 import com.moyeobwayo.moyeobwayo.Repository.DateEntityRepsitory;
@@ -20,11 +22,13 @@ public class TimeslotService {
     private final TimeslotRepository timeslotRepository;
     private final UserEntityRepository userEntityRepository;
     private final DateEntityRepsitory dateEntityRepsitory;
+    private final PartyRepository partyRepository;
 
-    public TimeslotService(TimeslotRepository timeslotRepository, UserEntityRepository userEntityRepository, DateEntityRepsitory dateEntityRepsitory) {
+    public TimeslotService(TimeslotRepository timeslotRepository, UserEntityRepository userEntityRepository, DateEntityRepsitory dateEntityRepsitory, PartyRepository partyRepository) {
         this.timeslotRepository = timeslotRepository;
         this.userEntityRepository = userEntityRepository;
         this.dateEntityRepsitory = dateEntityRepsitory;
+        this.partyRepository = partyRepository;
     }
 
     // 특정 파티에 속한 타임슬롯 조회
@@ -48,6 +52,12 @@ public class TimeslotService {
         timeslot.setUserEntity(user);
         timeslot.setDate(date);
         //해당 유저가 파티에 참여인원으로 있는지 확인해야함
+        boolean newUserFlag = timeslotRepository.existsUserInPartyTimeslot(user.getUserId(), date.getParty().getPartyId());
+        if(newUserFlag){
+            Party targetParty = partyRepository.findById(date.getParty().getPartyId())
+                    .orElseThrow(() -> new IllegalArgumentException("올바른 파티가 아닙니다."));
+            targetParty.setCurrentNum(targetParty.getCurrentNum() + 1);
+        }
         Timeslot createdTimeslot = timeslotRepository.save(timeslot);
         return convertToDTO(createdTimeslot);
     }
@@ -69,11 +79,18 @@ public class TimeslotService {
     }
 
     // 타임슬롯 삭제
-    public void deleteTimeslot(int id) {
+    public void deleteTimeslot(int id, Long userId, String partyId) {
         if (!timeslotRepository.existsById(id)) {
             throw new RuntimeException("타임 슬롯을 찾을 수 없습니다.");
         }
+
         timeslotRepository.deleteById(id);
+        if (timeslotRepository.existsUserInPartyTimeslot(userId, partyId) == false) {
+        //    해당 유저의 투표가 모두 사라진다면 currentNum없애기
+            Party targetPary = partyRepository.findById(partyId).
+                    orElseThrow(() -> new IllegalArgumentException("party is not found."));
+            targetPary.setCurrentNum(targetPary.getCurrentNum() - 1);
+        }
     }
 
     // Timeslot 객체를 TimeslotResponseDTO로 변환

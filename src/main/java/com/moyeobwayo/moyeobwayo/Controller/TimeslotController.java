@@ -55,8 +55,12 @@ public class TimeslotController {
     // 타임슬롯 삭제 (날짜 투표 삭제)
     // [DELETE] /api/v1/timeslots/{timeslot_id}
     @DeleteMapping("/{timeslot_id}")
-    public ResponseEntity<Void> deleteTimeslot(@PathVariable int timeslot_id) {
-        timeslotService.deleteTimeslot(timeslot_id);
+    public ResponseEntity<Void> deleteTimeslot(
+            @PathVariable int timeslot_id,
+            @RequestParam("userId") Long userId, // 쿼리 파라미터로 kakaoId 받음
+            @RequestParam("partyId") String partyId  // 쿼리 파라미터로 partyId 받음
+    ) {
+        timeslotService.deleteTimeslot(timeslot_id, userId, partyId);
         return ResponseEntity.noContent().build();
     }
 }
