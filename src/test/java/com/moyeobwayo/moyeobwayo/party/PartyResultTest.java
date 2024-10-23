@@ -11,18 +11,29 @@ import com.moyeobwayo.moyeobwayo.Repository.UserEntityRepository;
 import com.moyeobwayo.moyeobwayo.Service.PartyService;
 import com.moyeobwayo.moyeobwayo.Domain.dto.AvailableTime;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
+@AutoConfigureMockMvc
 public class PartyResultTest {
+    @Autowired
+    private MockMvc mockMvc;
 
     @Autowired
     private PartyService partyService;
@@ -39,6 +50,8 @@ public class PartyResultTest {
     @Autowired
     private DateEntityRepsitory dateEntityRepsitory;
 
+    @MockBean
+    private PartyService mockPartyService;
     @Test
     @Transactional
     public void 파티결과테스트() {
@@ -108,5 +121,47 @@ public class PartyResultTest {
         assertThat(availableTimes).isNotEmpty(); // 비어 있지 않은지
         assertThat(availableTimes.get(0).getUsers()).contains("user1", "user2"); // 두 개 다 포함하는지
     }
+    @Test
+    public void testGetPartyWithSortedDates() throws Exception {
+        MockitoAnnotations.openMocks(this);
+        Party mockParty = new Party();
+        mockParty.setPartyName("Test Party");
 
+        // 오름차순으로 정렬된 DateEntity 생성
+        // 현재 날짜 기준으로 내일, 1주일 뒤, 1달 뒤 날짜 생성
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+
+        // 내일 날짜
+        calendar.add(Calendar.DATE, 1);
+        DateEntity date1 = new DateEntity();
+        date1.setSelected_date(calendar.getTime()); // 내일
+        // 1주일 뒤 날짜
+        calendar.add(Calendar.DATE, 6); // 1주일 후
+        DateEntity date2 = new DateEntity();
+        date2.setSelected_date(calendar.getTime());
+        // 1달 뒤 날짜
+        calendar.add(Calendar.MONTH, 1); // 1달 후
+        DateEntity date3 = new DateEntity();
+        date3.setSelected_date(calendar.getTime());
+
+        List<DateEntity> sortedDates = Arrays.asList(date2, date1, date3);
+        mockParty.setDates(sortedDates);
+
+        // Service 호출 시 Mock 데이터를 반환하도록 설정
+        when(mockPartyService.findPartyById("1")).thenReturn(mockParty);
+
+        // SimpleDateFormat을 사용하여 날짜를 응답의 형식에 맞게 변환
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+
+        String formattedDate1 = dateFormat.format(date1.getSelected_date());
+        String formattedDate2 = dateFormat.format(date2.getSelected_date());
+        String formattedDate3 = dateFormat.format(date3.getSelected_date());
+        // GET 요청을 통해 검증: dates가 오름차순으로 정렬되었는지 확인
+        mockMvc.perform(get("/api/v1/party/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.party.dates[0].selected_date", is(formattedDate1)))
+                .andExpect(jsonPath("$.party.dates[1].selected_date", is(formattedDate2)))
+                .andExpect(jsonPath("$.party.dates[2].selected_date", is(formattedDate3)));
+    }
 }

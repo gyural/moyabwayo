@@ -9,7 +9,6 @@ import com.moyeobwayo.moyeobwayo.Repository.KakaoProfileRepository;
 import com.moyeobwayo.moyeobwayo.Repository.PartyRepository;
 import com.moyeobwayo.moyeobwayo.Repository.UserEntityRepository;
 import com.moyeobwayo.moyeobwayo.Service.KakaoUserService;
-import com.moyeobwayo.moyeobwayo.Service.PartyService;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
