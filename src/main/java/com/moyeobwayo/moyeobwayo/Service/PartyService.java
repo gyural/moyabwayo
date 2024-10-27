@@ -216,22 +216,73 @@ public class PartyService {
 
     /**
      * 특정 파티의 가용 여부 높은 시간을 찾는 메서드
-     * @param partyId
+     * @param party
      * @return List<AvailableTime>
      */
-    public List<AvailableTime> findAvailableTimesForParty(String partyId) {  // !!!!!!!!!!! 수정
+    public List<AvailableTime> findAvailableTimesForParty(Party party) {  // !!!!!!!!!!! 수정
         // 1. Party 객체 찾기
-        Party party = partyStringIdRepository.findById(partyId)  // !!!!!!!!!!! 수정
-                .orElseThrow(() -> new IllegalArgumentException("Party not found"));
-
+        //Party party = partyStringIdRepository.findById(partyId)  // !!!!!!!!!!! 수정
+        //        .orElseThrow(() -> new IllegalArgumentException("Party not found"));
+        ZoneId zoneId = ZoneId.systemDefault();
+        LocalDateTime partyStartTime = LocalDateTime.ofInstant(party.getStartDate().toInstant(), ZoneId.systemDefault());
+        LocalDateTime partyEndTime = LocalDateTime.ofInstant(party.getEndDate().toInstant(), ZoneId.systemDefault());
         // 2. Party와 연결된 모든 DateEntity의 Timeslot 가져오기
+
         List<TimeSlot> timeSlots = new ArrayList<>();
         for (DateEntity date : party.getDates()) {
-            List<Timeslot> timeslots = timeslotRepository.findAllByDate(date);
-            for (Timeslot slot : timeslots) {
-                LocalDateTime start = slot.getSelectedStartTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-                LocalDateTime end = slot.getSelectedEndTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-                timeSlots.add(new TimeSlot(slot.getUserEntity().getUserName(), start, end));
+            // date에서 날짜를 가져오고, party에서 시작 및 종료 시간을 가져옴
+            LocalDateTime dateStart = LocalDateTime.ofInstant(date.getSelected_date().toInstant(), zoneId);
+
+            // party의 날짜와 시간 합치기
+            LocalDateTime startTime = dateStart.withHour(partyStartTime.getHour()).withMinute(partyStartTime.getMinute());
+            LocalDateTime endTime = dateStart.withHour(partyEndTime.getHour()).withMinute(partyEndTime.getMinute());
+
+            List<Timeslot> slots = date.getTimeslots();
+
+            for (Timeslot slot : slots) {
+                // 비트스트링을 통해 30분 단위로 시간 계산
+                String byteString = slot.getByteString();
+                int intervalMinutes = 30;
+
+                LocalDateTime currentSlotStart = startTime;
+                boolean inAvailableRange = false;
+                LocalDateTime rangeStart = null;
+
+                for (int i = 0; i < byteString.length(); i++) {
+                    LocalDateTime currentTimePoint = currentSlotStart.plusMinutes(i * intervalMinutes);
+
+                    // 현재 date와 파티의 시작/종료 시간 사이에서 유효한 범위 체크
+                    if (currentTimePoint.isBefore(dateStart) || currentTimePoint.isAfter(endTime)) {
+                        continue;
+                    }
+
+                    // 비트가 '1'일 때 사용 가능 시간으로 처리
+                    if (byteString.charAt(i) == '1') {
+                        if (!inAvailableRange) {
+                            rangeStart = currentTimePoint;
+                            inAvailableRange = true;
+                        }
+                    } else {
+                        // 비트가 '0'이면 현재 범위가 끝났음을 기록하고 추가
+                        if (inAvailableRange) {
+                            timeSlots.add(new TimeSlot(
+                                    slot.getUserEntity().getUserName(),
+                                    rangeStart,
+                                    currentTimePoint  // 종료 시간은 현재 30분 후
+                            ));
+                            inAvailableRange = false;
+                        }
+                    }
+                }
+
+                // 만약 마지막 구간이 1로 끝났다면 종료 시간까지의 구간 추가
+                if (inAvailableRange) {
+                    timeSlots.add(new TimeSlot(
+                            slot.getUserEntity().getUserName(),
+                            rangeStart,
+                            endTime  // 마지막 종료 시간을 파티 종료 시간으로 설정
+                    ));
+                }
             }
         }
 

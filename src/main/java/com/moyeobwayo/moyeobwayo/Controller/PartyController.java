@@ -71,7 +71,7 @@ public class PartyController {
     public ResponseEntity<PartyResponseDTO> getParty(@PathVariable("id") String id) {
         PartyResponseDTO partyResponseDTO = new PartyResponseDTO();
         Party party = partyService.findPartyById(id);
-        List<AvailableTime> availableTimes = partyService.findAvailableTimesForParty(id);
+        List<AvailableTime> availableTimes = partyService.findAvailableTimesForParty(party);
 
         // 3. 두 데이터를 하나의 Map에 담기
         partyResponseDTO.setParty(party);  // 파티 정보 추가
