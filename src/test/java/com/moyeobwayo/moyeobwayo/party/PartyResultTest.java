@@ -115,7 +115,7 @@ public class PartyResultTest {
         timeslotRepository.save(timeslot2);
 
         // Step 5: Call the service method to get the available times
-        List<AvailableTime> availableTimes = partyService.findAvailableTimesForParty(savedParty.getPartyId());  // 수정
+        List<AvailableTime> availableTimes = partyService.findAvailableTimesForParty(savedParty);  // 수정
 
         // Step 6: Assertions to verify the results
         assertThat(availableTimes).isNotEmpty(); // 비어 있지 않은지

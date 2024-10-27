@@ -4,6 +4,7 @@ import com.moyeobwayo.moyeobwayo.Domain.Timeslot;
 import com.moyeobwayo.moyeobwayo.Domain.dto.TimeslotRequestDTO;
 import com.moyeobwayo.moyeobwayo.Domain.dto.TimeslotResponseDTO;
 import com.moyeobwayo.moyeobwayo.Service.TimeslotService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,14 +12,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/timeslots")
+@RequiredArgsConstructor
 public class TimeslotController {
 
     private final TimeslotService timeslotService;
-
-    // 생성자 주입
-    public TimeslotController(TimeslotService timeslotService) {
-        this.timeslotService = timeslotService;
-    }
 
     // 같은 party_id를 가진 타임슬롯 조회 (특정 파티에 속한 타임슬롯)
     // [GET] /api/v1/timeslots/party/{party_id}
@@ -45,8 +42,8 @@ public class TimeslotController {
 
         TimeslotResponseDTO response = timeslotService.updateTimeslot(
                 timeslot_id,
-                timeslotRequestDTO.getSelected_start_time(),
-                timeslotRequestDTO.getSelected_end_time()
+                timeslotRequestDTO.getSelectedStartTime(),
+                timeslotRequestDTO.getSelectedEndTime()
         );
 
         return ResponseEntity.ok(response);

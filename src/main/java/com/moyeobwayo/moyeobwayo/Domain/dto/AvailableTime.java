@@ -1,44 +1,20 @@
 package com.moyeobwayo.moyeobwayo.Domain.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+@Getter @Setter
+@AllArgsConstructor @NoArgsConstructor
 public class AvailableTime {
     private LocalDateTime start;
     private LocalDateTime end;
     private List<String> users;
-
-    public AvailableTime(LocalDateTime start, LocalDateTime end, List<String> users) {
-        this.start = start;
-        this.end = end;
-        this.users = users;
-    }
-
-    // Getter and Setter methods
-    public LocalDateTime getStart() {
-        return start;
-    }
-
-    public void setStart(LocalDateTime start) {
-        this.start = start;
-    }
-
-    public LocalDateTime getEnd() {
-        return end;
-    }
-
-    public void setEnd(LocalDateTime end) {
-        this.end = end;
-    }
-
-    public List<String> getUsers() {
-        return users;
-    }
-
-    public void setUsers(List<String> users) {
-        this.users = users;
-    }
 
     @Override
     public String toString() {
