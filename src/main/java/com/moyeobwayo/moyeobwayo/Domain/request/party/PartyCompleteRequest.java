@@ -23,7 +23,9 @@ import java.util.TimeZone;
 public class PartyCompleteRequest {
     private Long userId;
     private Date completeTime;
+    private Date endTime;
     private String locationName;
+    private long dateId;
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));

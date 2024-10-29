@@ -1,12 +1,15 @@
 package com.moyeobwayo.moyeobwayo.Domain;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Getter
 @Setter
+@AllArgsConstructor @NoArgsConstructor
 public class KakaoProfile {
 
     @Id  // @GeneratedValue(strategy = GenerationType.IDENTITY) 삭제

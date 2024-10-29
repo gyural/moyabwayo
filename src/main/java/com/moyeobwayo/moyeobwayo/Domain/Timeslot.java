@@ -17,10 +17,10 @@ public class Timeslot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int slotId;
+    private Long slotId;
 
-    private Date selectedStartTime;
-    private Date selectedEndTime;
+    //private Date selectedStartTime;
+    //private Date selectedEndTime;
     private String byteString;
 
     @ManyToOne

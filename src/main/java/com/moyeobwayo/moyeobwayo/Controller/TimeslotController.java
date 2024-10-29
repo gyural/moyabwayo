@@ -37,7 +37,7 @@ public class TimeslotController {
     // [PUT] /api/v1/timeslots/{timeslot_id}
     @PutMapping("/{timeslot_id}")
     public ResponseEntity<TimeslotResponseDTO> updateTimeslot(
-            @PathVariable int timeslot_id,
+            @PathVariable Long timeslot_id,
             @RequestBody TimeslotRequestDTO timeslotRequestDTO) {
 
         TimeslotResponseDTO response = timeslotService.updateTimeslot(
@@ -53,7 +53,7 @@ public class TimeslotController {
     // [DELETE] /api/v1/timeslots/{timeslot_id}
     @DeleteMapping("/{timeslot_id}")
     public ResponseEntity<Void> deleteTimeslot(
-            @PathVariable int timeslot_id,
+            @PathVariable Long timeslot_id,
             @RequestParam("userId") Long userId, // 쿼리 파라미터로 kakaoId 받음
             @RequestParam("partyId") String partyId  // 쿼리 파라미터로 partyId 받음
     ) {

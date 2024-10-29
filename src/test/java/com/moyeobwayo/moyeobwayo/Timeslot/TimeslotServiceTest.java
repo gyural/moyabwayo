@@ -63,9 +63,6 @@ public class TimeslotServiceTest {
         Date startTime = new Date(); // 테스트를 위한 현재 시간
         Date endTime = new Date(startTime.getTime() + 3600000); // 1시간 후
 
-        timeslot.setSelectedStartTime(startTime);
-        timeslot.setSelectedEndTime(endTime);
-
         Mockito.when(userEntityRepository.findById(9L)).thenReturn(Optional.of(user));
         Mockito.when(dateEntityRepsitory.findById(2)).thenReturn(Optional.of(date));
         Mockito.when(timeslotRepository.save(Mockito.any(Timeslot.class))).thenReturn(timeslot);

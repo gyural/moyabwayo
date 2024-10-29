@@ -50,8 +50,6 @@ public class TimeslotService {
         validateByteString(byteString, startTime, endTime);
 
         Timeslot timeslot = new Timeslot();
-        timeslot.setSelectedStartTime(dto.getSelectedStartTime());
-        timeslot.setSelectedEndTime(dto.getSelectedEndTime());
         timeslot.setUserEntity(user);
         timeslot.setDate(date);
         timeslot.setByteString(byteString);
@@ -91,7 +89,7 @@ public class TimeslotService {
         }
     }
     // 타임슬롯 수정
-    public TimeslotResponseDTO updateTimeslot(int id, Date selectedStartTime, Date selectedEndTime) {
+    public TimeslotResponseDTO updateTimeslot(Long id, Date selectedStartTime, Date selectedEndTime) {
         Timeslot existingTimeslot = timeslotRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("타임 슬롯을 찾을 수 없습니다."));
 
@@ -99,15 +97,13 @@ public class TimeslotService {
             throw new IllegalArgumentException("시작 시간은 종료 시간보다 이전이어야 합니다.");
         }
 
-        existingTimeslot.setSelectedStartTime(selectedStartTime);
-        existingTimeslot.setSelectedEndTime(selectedEndTime);
 
         Timeslot updatedTimeslot = timeslotRepository.save(existingTimeslot);
         return convertToDTO(updatedTimeslot);
     }
 
     // 타임슬롯 삭제
-    public void deleteTimeslot(int id, Long userId, String partyId) {
+    public void deleteTimeslot(Long id, Long userId, String partyId) {
         if (!timeslotRepository.existsById(id)) {
             throw new RuntimeException("타임 슬롯을 찾을 수 없습니다.");
         }
@@ -125,8 +121,6 @@ public class TimeslotService {
     private TimeslotResponseDTO convertToDTO(Timeslot timeslot) {
         return new TimeslotResponseDTO(
                 timeslot.getSlotId(),
-                timeslot.getSelectedStartTime(),
-                timeslot.getSelectedEndTime(),
                 timeslot.getUserEntity().getUserId(),
                 timeslot.getDate().getParty().getPartyId(),
                 timeslot.getDate().getDateId(),

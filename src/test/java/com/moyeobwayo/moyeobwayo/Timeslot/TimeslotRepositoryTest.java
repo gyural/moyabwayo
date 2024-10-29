@@ -65,8 +65,6 @@ public class TimeslotRepositoryTest {
         Timeslot timeslot = new Timeslot();
         timeslot.setUserEntity(user);  // UserEntity 설정
         timeslot.setDate(dateEntity);  // DateEntity 설정
-        timeslot.setSelectedStartTime(new Date());
-        timeslot.setSelectedEndTime(new Date());
         timeslotRepository.save(timeslot);  // Timeslot 저장
     }
 
