@@ -27,7 +27,7 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody UserLoginRequest request) {
         // 서비스 호출하여 사용자 인증
-        Optional<UserResponse> user = userService.loginOrRegister(request.getUserName(), request.getPassword(), request.getPartyId(), request.isKakao());
+        Optional<UserResponse> user = userService.loginOrRegister(request.getUserName(), request.getPassword(), request.getPartyId(), request.isKakao(), request.getKakaoUserId());
 
         if (user.isPresent()) {
             // 로그인 성공 시, 사용자 정보를 반환
