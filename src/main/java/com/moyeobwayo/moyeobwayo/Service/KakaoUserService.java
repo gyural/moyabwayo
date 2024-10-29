@@ -1,11 +1,5 @@
 package com.moyeobwayo.moyeobwayo.Service;
-import java.io.BufferedReader;
-import java.io.IOException;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import com.moyeobwayo.moyeobwayo.Domain.Alarm;
 import com.moyeobwayo.moyeobwayo.Domain.KakaoProfile;
 import com.moyeobwayo.moyeobwayo.Domain.Party;
 import com.moyeobwayo.moyeobwayo.Domain.UserEntity;
@@ -24,13 +18,11 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Service
 public class KakaoUserService {
@@ -46,25 +38,39 @@ public class KakaoUserService {
     private String KAKAO_REST_KEY;
 
     //UserList중에 카카오 유저만 함수 호출
-    public void sendKakaoCompletMesage(List<UserEntity> users, Party party, Date completeDate) {
+    public Map<String, String> sendKakaoCompletMesage(List<UserEntity> users, Party party, Date completeDate) {
+        Map<String, String> resultMap = new HashMap<>();
+
         for (UserEntity user : users) {
             // 카카오 유저라면 메시지 보내기 (예: 카카오 API 호출)
             if (validateAlarmState(user)) {
-                sendCompleteMessage(user.getKakaoProfile(), party, completeDate);
+                boolean flag = sendCompleteMessage(user.getKakaoProfile(), party, completeDate);
+
+                // 성공 여부에 따라 결과 맵에 "성공" 또는 "실패"로 저장
+                if (flag) {
+                    resultMap.put(user.getUserName(), "성공");
+                } else {
+                    resultMap.put(user.getUserName(), "실패");
+                }
+            } else {
+                // 알람 상태가 유효하지 않은 경우, 실패로 처리
+                resultMap.put(user.getUserName(), "실패");
             }
         }
 
+        return resultMap;
     }
     public boolean validateAlarmState(UserEntity userEntity){
         //전체 알람이 Off라면 False
         if(userEntity.getKakaoProfile() == null || userEntity.getKakaoProfile().isAlarm_off() == true){
             return false;
+
         }
         //해당 알람만 Off라면 False
         if(userEntity.getAlarm() == null || userEntity.getAlarm().isAlarm_on()==false){
             return false;
-        }
 
+        }
         return true;
     }
     // 1. Date 객체를 받아 UTC로 변환하는 함수
@@ -92,7 +98,7 @@ public class KakaoUserService {
     }
 
     //한 카카오 유저에게 메시지 전송
-    public void sendCompleteMessage(KakaoProfile kakaoUser, Party party, Date completeDate) {
+    public boolean sendCompleteMessage(KakaoProfile kakaoUser, Party party, Date completeDate) {
 
         // 1. JSON 템플릿 로드및 기본값 설정
         String startTimeUTC = convertToUTC(completeDate);
@@ -107,7 +113,9 @@ public class KakaoUserService {
         time.put("time_zone", "Asia/Seoul");
         schedule.put("time", time);
         // 설명 설정
-        schedule.put("description", party.getPartyDescription() != null ? party.getPartyDescription() : "기본 설명입니다.");
+        String description = (party.getPartyDescription() != null ? party.getPartyDescription() : "기본 설명입니다.") +
+                " 자세히 보기 -> http://localhost:3000/meeting/" + party.getPartyId();
+        schedule.put("description", description);
         // 위치 설정
         JSONObject location = new JSONObject();
         location.put("name", party.getLocationName() != null ? party.getLocationName() : "장소 미정");
@@ -146,13 +154,12 @@ public class KakaoUserService {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
             int statusCode = response.getStatusCodeValue();
             if (statusCode >= 200 && statusCode < 300) {
-                //System.out.println("message send success!!");
+                return true;
             }else {
-                //System.out.println("Error!!" + response.getStatusCode() + response.getBody());
+               return false;
             }
         }catch (HttpClientErrorException e) {
             // 클라이언트 오류 (4xx)
-            //System.out.println(e.getResponseBodyAsString());
             if(e.getStatusCode() == HttpStatus.UNAUTHORIZED){
                 //아래 코드에서 DB값을 수정해야되어서 해당 함수가 모두 완료되고 아래 로직을 작동해야함
                 ResponseEntity<?> refreshResponse =  refreshKakaoAccToken(kakaoUser);
@@ -160,18 +167,20 @@ public class KakaoUserService {
                     String newAccToekn = extractAccessTokenFromResponse(refreshResponse.getBody().toString());
                     kakaoUser.setAccess_token(newAccToekn);
                     sendCompleteMessage(kakaoUser, party, completeDate);
+                    kakaoProfileRepository.save(kakaoUser);
                 }else {
                 }
             }else if(e.getStatusCode() == HttpStatus.FORBIDDEN){
-                //로그아웃 처리 해야함
+                throw new RuntimeException("refresh token expired" + e.getMessage());
             }
         } catch (HttpServerErrorException e) {
             // 서버 오류 (5xx)
-            //System.out.println(e.getResponseBodyAsString());
+            throw new RuntimeException("Server error: " + e.getResponseBodyAsString());
         } catch (Exception e) {
             // 그 외의 모든 예외 처리
-            //System.out.println(e.getMessage());
+            throw new RuntimeException("Unexpected error: " + e.getMessage());
         }
+        return false;
     }
 
     public ResponseEntity<?> refreshKakaoAccToken(KakaoProfile kakaoProfile) {

@@ -5,18 +5,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
-
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 public class TimeslotResponseDTO {
 
-    private int slotId;
-    private Date selectedStartTime;
-    private Date selectedEndTime;
+    private Long slotId;
     private Long userId;
     private String partyId;
-    private int dateId;
+    private Long dateId;
     private String byteString;
 
 

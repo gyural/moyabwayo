@@ -32,8 +32,6 @@ public class TimeslotControllerTest {
     public void testCreateTimeslot() throws Exception {
         Timeslot timeslot = new Timeslot();
         timeslot.setSlotId(1);
-        timeslot.setSelectedStartTime(new Date());
-        timeslot.setSelectedEndTime(new Date());
 
         UserEntity userEntity = new UserEntity();
         userEntity.setUserId(9L);

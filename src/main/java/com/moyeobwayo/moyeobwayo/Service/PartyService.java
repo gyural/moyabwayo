@@ -4,8 +4,10 @@ import com.moyeobwayo.moyeobwayo.Domain.*;
 import com.moyeobwayo.moyeobwayo.Domain.dto.TimeSlot;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCompleteRequest;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCreateRequest;
+import com.moyeobwayo.moyeobwayo.Domain.response.PartyCompleteResponse;
 import com.moyeobwayo.moyeobwayo.Repository.*;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.moyeobwayo.moyeobwayo.Domain.dto.AvailableTime;
@@ -22,31 +24,16 @@ import java.util.*;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class PartyService {
     private final PartyStringIdRepository partyStringIdRepository;
-    private PartyRepository partyRepository;
-    private UserEntityRepository userRepository;
-    private TimeslotRepository timeslotRepository;
-    private DateEntityRepsitory dateEntityRepsitory;
-    private KakaoUserService kakaoUserService;
-    private AlarmRepository alarmRepository;
+    private final PartyRepository partyRepository;
+    private final UserEntityRepository userRepository;
+    private final TimeslotRepository timeslotRepository;
+    private final DateEntityRepsitory dateEntityRepsitory;
+    private final KakaoUserService kakaoUserService;
+    private final AlarmRepository alarmRepository;
 
-    // 의존성 주입
-    public PartyService(PartyRepository partyRepository,
-                        UserEntityRepository userRepository,
-                        TimeslotRepository timeslotRepository,
-                        DateEntityRepsitory dateEntityRepsitory,
-                        KakaoUserService kakaoUserService,
-                        PartyStringIdRepository partyStringIdRepository,
-                        AlarmRepository alarmRepository) {
-        this.partyRepository = partyRepository;
-        this.userRepository = userRepository;
-        this.timeslotRepository = timeslotRepository;
-        this.dateEntityRepsitory = dateEntityRepsitory;
-        this.kakaoUserService = kakaoUserService;
-        this.partyStringIdRepository = partyStringIdRepository;
-        this.alarmRepository = alarmRepository;
-    }
 
     public void updateAlarmStatus(String partyId, String alarmStatus) {
         // partyId로 Alarm 객체 조회
@@ -91,30 +78,33 @@ public class PartyService {
             return partyValidationResponse;
         }
 
-        Party party = partyRepository.findById(id).orElse(null);
-        List<UserEntity> targetUsers = userRepository.findUserEntitiesByParty(party);
-        if(targetUsers.size() > 0){
-            // kakaoUser라면 리마인드 메시지 전송
-            Date reqDate = partyCompleteRequest.getCompleteTime();
-            String locationName = partyCompleteRequest.getLocationName() != null ? partyCompleteRequest.getLocationName() : "미정";
-            // 확정 시간 DB 반영
-            party.setDecisionDate(reqDate);
-            party.setLocationName(locationName);
-            try {
-                List<UserEntity> possibleUsers = getPossibleUsers(party, reqDate);
-                // 메시지 전송
-                sendCompleteMsg(possibleUsers, party, reqDate);
-                partyRepository.save(party);
-                return ResponseEntity.ok(party);
-            } catch (Exception e) {
-                return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        Party party = partyRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Error: Party not found with id " + id));
+
+        Date reqDate = partyCompleteRequest.getCompleteTime();
+        Date endDate = partyCompleteRequest.getEndTime();
+        String locationName = partyCompleteRequest.getLocationName() != null ? partyCompleteRequest.getLocationName() : "미정";
+        // 확정 시간 DB 반영
+        party.setDecisionDate(reqDate);
+        party.setLocationName(locationName);
+        try {
+            List<UserEntity> possibleUsers = getPossibleUsers(party, reqDate, endDate, partyCompleteRequest.getDateId());
+            // 메시지 전송
+            System.out.println("possibleUsers");
+            System.out.println(possibleUsers);
+            Map<String, String> userMessageResponse = kakaoUserService.sendKakaoCompletMesage(possibleUsers, party, reqDate);
+            // 카카오 메시지를 보낼 수 없는 유저들 추가
+            for (UserEntity user : possibleUsers) {
+                // 메시지를 보낸 유저만 map에 포함되어 있으므로, 포함되지 않은 유저에게 "카카오 유저가 아님"을 추가
+                userMessageResponse.putIfAbsent(user.getUserName(), "카카오 유저가 아님");
             }
-        }else{
-            // 확정 시간 DB 반영
-            Date reqDate = partyCompleteRequest.getCompleteTime();
-            party.setDecisionDate(reqDate);
-            return ResponseEntity.ok(party);
+
+            PartyCompleteResponse response = new PartyCompleteResponse(party, userMessageResponse);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
+
     }
 
     // 필수값 검증 모듈
@@ -137,22 +127,37 @@ public class PartyService {
         return null;  // 파티가 존재하면 null 반환
     }
     // 파티내의 목표시간에 가능한 유저리스트 반환
-    public List<UserEntity> getPossibleUsers(Party party, Date targetDate) {
+    public List<UserEntity> getPossibleUsers(Party party, Date targetDate, Date endDate, Long dateId) throws Exception {
         // DateID 조회
         Integer targetDateID = dateEntityRepsitory.findDateIdByPartyAndSelectedDate(party.getPartyId(), targetDate);  // 이제 String으로 처리
         if (targetDateID == null) {
-            System.out.println("targetDateID is null");
+
             return new ArrayList<>();  // 빈 배열 반환
         }
         // 특정 시간 범위 안에 있는 UserEntity 조회
-        return timeslotRepository.findUsersByDateAndTime(targetDateID, targetDate);
-    }
-    public void sendCompleteMsg (List<UserEntity> targetUsers, Party party, Date completeDate){
-        // kakao 확정 메시지 보내기
-        kakaoUserService.sendKakaoCompletMesage(targetUsers, party, completeDate);
-    }
+        int partyStartMinutes = party.getStartDate().getHours() * 60 + party.getStartDate().getMinutes();
+        int descisionStartMinutes = targetDate.getHours() * 60 + targetDate.getMinutes();
+        int descisionEndMinutes = endDate.getHours() * 60 + endDate.getMinutes();
 
+        // 시작 및 종료 인덱스 계산 (30분 단위로 인덱스 변환)
+        int startIndex = (descisionStartMinutes - partyStartMinutes) / 30;
+        int endIndex = (descisionEndMinutes - partyStartMinutes) / 30;
+        // 애내의 시간 차이 x2 가 byteString의 총길이이고 이때 targetDate ~ endDate -1 인덱스룰 구해야해
+        List<Timeslot> timeslots = timeslotRepository.findAllByDateId(dateId);
 
+        return  filterUsersByByteString(timeslots, startIndex, endIndex);
+    }
+    public List<UserEntity> filterUsersByByteString(List<Timeslot> timeslots, int startIndex, int endIndex) {
+        List<UserEntity> filteredUsers = new ArrayList<>();
+        for (Timeslot timeslot : timeslots) {
+            String byteString = timeslot.getByteString();
+            // 특정 범위가 모두 '1'인지 확인
+            if (byteString.substring(startIndex, endIndex).equals("1".repeat(endIndex - startIndex))) {
+                filteredUsers.add(timeslot.getUserEntity());
+            }
+        }
+        return filteredUsers;
+    }
     /**
      * POST api/v1/party/create
      * 파티 생성

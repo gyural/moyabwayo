@@ -99,14 +99,10 @@ public class PartyResultTest {
 
         // Step 4: Create timeslots for users
         Timeslot timeslot1 = new Timeslot();
-        timeslot1.setSelectedStartTime(new Date());
-        timeslot1.setSelectedEndTime(new Date(System.currentTimeMillis() + 3600000)); // 1 hour
         timeslot1.setDate(dateEntities.get(0));
         timeslot1.setUserEntity(user1);
 
         Timeslot timeslot2 = new Timeslot();
-        timeslot2.setSelectedStartTime(new Date());
-        timeslot2.setSelectedEndTime(new Date(System.currentTimeMillis() + 7200000)); // 2 hours
         timeslot2.setDate(dateEntities.get(1));
         timeslot2.setUserEntity(user2);
 
