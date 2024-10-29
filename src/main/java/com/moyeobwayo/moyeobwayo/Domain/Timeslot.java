@@ -30,7 +30,7 @@ public class Timeslot {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    //@JsonIgnore  // 순환 참조 방지
+    @JsonIgnore  // 순환 참조 방지
     private UserEntity userEntity;
 
     @PostConstruct
