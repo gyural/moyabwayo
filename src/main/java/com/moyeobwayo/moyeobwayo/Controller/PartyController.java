@@ -4,6 +4,7 @@ import com.moyeobwayo.moyeobwayo.Domain.Party;
 import com.moyeobwayo.moyeobwayo.Domain.dto.PartyResponseDTO;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCompleteRequest;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCreateRequest;
+import com.moyeobwayo.moyeobwayo.Domain.response.PartyCompleteResponse;
 import com.moyeobwayo.moyeobwayo.Service.PartyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,7 +35,7 @@ public class PartyController {
     @Operation(summary = "Complete party", description = "Completes the party with the given ID and request details.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Party completed successfully",
-                    content = @Content(schema = @Schema(implementation = Party.class))),  // Party 객체를 반환
+                    content = @Content(schema = @Schema(implementation = PartyCompleteResponse.class))),  // Party 객체를 반환
             @ApiResponse(responseCode = "400", description = "Bad request, invalid data",
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),  // 에러 응답 정의
             @ApiResponse(responseCode = "404", description = "Party not found",

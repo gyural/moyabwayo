@@ -28,26 +28,32 @@ public class TimeslotController {
     // 타임슬롯 생성 (유저가 날짜 투표)
     // [POST] /api/v1/timeslots
     @PostMapping
-    public ResponseEntity<TimeslotResponseDTO> createTimeslot(@RequestBody TimeslotRequestDTO timeslotRequestDTO) {
-        TimeslotResponseDTO response = timeslotService.createTimeslot(timeslotRequestDTO);
-        return ResponseEntity.status(201).body(response);
+    public ResponseEntity<?> createTimeslot(@RequestBody TimeslotRequestDTO timeslotRequestDTO) {
+        try{
+            TimeslotResponseDTO response = timeslotService.createTimeslot(timeslotRequestDTO);
+            return ResponseEntity.status(201).body(response);
+
+        }catch (IllegalArgumentException e){
+            System.out.println(e);
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     // 타임슬롯 수정 (날짜 투표 수정)
     // [PUT] /api/v1/timeslots/{timeslot_id}
-    @PutMapping("/{timeslot_id}")
-    public ResponseEntity<TimeslotResponseDTO> updateTimeslot(
-            @PathVariable Long timeslot_id,
-            @RequestBody TimeslotRequestDTO timeslotRequestDTO) {
-
-        TimeslotResponseDTO response = timeslotService.updateTimeslot(
-                timeslot_id,
-                timeslotRequestDTO.getSelectedStartTime(),
-                timeslotRequestDTO.getSelectedEndTime()
-        );
-
-        return ResponseEntity.ok(response);
-    }
+    //@PutMapping("/{timeslot_id}")
+    //public ResponseEntity<TimeslotResponseDTO> updateTimeslot(
+    //        @PathVariable Long timeslot_id,
+    //        @RequestBody TimeslotRequestDTO timeslotRequestDTO) {
+    //
+    //    TimeslotResponseDTO response = timeslotService.updateTimeslot(
+    //            timeslot_id,
+    //            timeslotRequestDTO.getSelectedStartTime(),
+    //            timeslotRequestDTO.getSelectedEndTime()
+    //    );
+    //
+    //    return ResponseEntity.ok(response);
+    //}
 
     // 타임슬롯 삭제 (날짜 투표 삭제)
     // [DELETE] /api/v1/timeslots/{timeslot_id}

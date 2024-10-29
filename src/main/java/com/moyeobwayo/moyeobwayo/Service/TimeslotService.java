@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,31 +40,47 @@ public class TimeslotService {
     public TimeslotResponseDTO createTimeslot(TimeslotRequestDTO dto) {
         UserEntity user = userEntityRepository.findById((long) dto.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + dto.getUserId()));
-        DateEntity date = dateEntityRepsitory.findById(dto.getDateId())
+        DateEntity date = dateEntityRepsitory.findById((long) dto.getDateId())
                 .orElseThrow(() -> new IllegalArgumentException("날짜를 찾을 수 없습니다: " + dto.getDateId()));
 
-        String byteString = dto.getBinaryString();
-        // 시작 시간과 종료 시간을 가져오기
-        Date startTime = date.getParty().getStartDate();
-        Date endTime = date.getParty().getEndDate();
-        // byteString 검증 메서드 호출
-        validateByteString(byteString, startTime, endTime);
+        // 해당 date에 해당하는 모든 timeslot 가져오기
+        List<Timeslot> timeslots = timeslotRepository.findTimeslotsByUserIdAndDateId(date.getDateId());
 
-        Timeslot timeslot = new Timeslot();
-        timeslot.setUserEntity(user);
-        timeslot.setDate(date);
-        timeslot.setByteString(byteString);
-        //해당 유저가 파티에 참여인원으로 있는지 확인해야함
-        boolean newUserFlag = timeslotRepository.existsUserInPartyTimeslot(user.getUserId(), date.getParty().getPartyId());
-        if(newUserFlag){
-            Party targetParty = partyRepository.findById(date.getParty().getPartyId())
-                    .orElseThrow(() -> new IllegalArgumentException("올바른 파티가 아닙니다."));
-            targetParty.setCurrentNum(targetParty.getCurrentNum() + 1);
+        // 요청받은 userId가 존재하는지 확인
+        Optional<Timeslot> optionalTimeslot = timeslots.stream()
+                .filter(t -> t.getUserEntity().getUserId().equals(user.getUserId()))
+                .findFirst();
+
+        if (optionalTimeslot.isPresent()) {
+            System.out.println("기존 Timeslot이 존재합니다.");
+            return updateTimeslot(optionalTimeslot.get(), dto, date); // 첫 번째 요소 업데이트
+        } else {
+            System.out.println("새로운 Timeslot 생성 중...");
+            String byteString = dto.getBinaryString();
+
+            // 시작 시간과 종료 시간을 가져오기
+            Date startTime = date.getParty().getStartDate();
+            Date endTime = date.getParty().getEndDate();
+            // byteString 검증 메서드 호출
+            validateByteString(byteString, startTime, endTime);
+
+            Timeslot timeslot = new Timeslot();
+            timeslot.setUserEntity(user);
+            timeslot.setDate(date);
+            timeslot.setByteString(byteString);
+
+            // 해당 유저가 파티에 참여 중인지 확인
+            boolean newUserFlag = timeslotRepository.existsUserInPartyTimeslot(user.getUserId(), date.getParty().getPartyId());
+            if (newUserFlag) {
+                Party targetParty = partyRepository.findById(date.getParty().getPartyId())
+                        .orElseThrow(() -> new IllegalArgumentException("올바른 파티가 아닙니다."));
+                targetParty.setCurrentNum(targetParty.getCurrentNum() + 1);
+            }
+
+            Timeslot createdTimeslot = timeslotRepository.save(timeslot);
+            return convertToDTO(createdTimeslot);
         }
-        Timeslot createdTimeslot = timeslotRepository.save(timeslot);
-        return convertToDTO(createdTimeslot);
     }
-
     private void validateByteString(String byteString, Date startTime, Date endTime) {
         Calendar startCal = Calendar.getInstance();
         startCal.setTime(startTime);
@@ -89,16 +106,15 @@ public class TimeslotService {
         }
     }
     // 타임슬롯 수정
-    public TimeslotResponseDTO updateTimeslot(Long id, Date selectedStartTime, Date selectedEndTime) {
-        Timeslot existingTimeslot = timeslotRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("타임 슬롯을 찾을 수 없습니다."));
+    public TimeslotResponseDTO updateTimeslot(Timeslot timeslot, TimeslotRequestDTO dto, DateEntity date) {
+        timeslot.setByteString(dto.getBinaryString());
 
-        if (selectedStartTime.after(selectedEndTime)) {
-            throw new IllegalArgumentException("시작 시간은 종료 시간보다 이전이어야 합니다.");
-        }
+        Date startTime = date.getParty().getStartDate();
+        Date endTime = date.getParty().getEndDate();
+        validateByteString(dto.getBinaryString(), startTime, endTime);
 
+        Timeslot updatedTimeslot = timeslotRepository.save(timeslot);
 
-        Timeslot updatedTimeslot = timeslotRepository.save(existingTimeslot);
         return convertToDTO(updatedTimeslot);
     }
 

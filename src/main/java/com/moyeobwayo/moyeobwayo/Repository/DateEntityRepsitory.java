@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Date;
 
-public interface DateEntityRepsitory extends JpaRepository<DateEntity, Integer> {
+public interface DateEntityRepsitory extends JpaRepository<DateEntity, Long> {
     @Query("SELECT d.dateId FROM DateEntity d WHERE d.party.partyId = :partyId AND FUNCTION('DATE', d.selected_date) = FUNCTION('DATE', :selectedDate)")
     Integer findDateIdByPartyAndSelectedDate(@Param("partyId") String partyId, @Param("selectedDate") Date selectedDate);
 }

@@ -29,9 +29,9 @@ public class UserEntity {
     private Alarm alarm;
 
     //양방향 관계 필요 없고 무한루프를 유발함
-    //@OneToMany(mappedBy = "userEntity")
-    //@JsonIgnore // Timeslot에서 UserEntity를 참조할 때 무시
-    //private List<Timeslot> timeslots;
+    @OneToMany(mappedBy = "userEntity")
+    @JsonIgnore // Timeslot에서 UserEntity를 참조할 때 무시
+    private List<Timeslot> timeslots;
 
     @JsonProperty("party")
     @ManyToOne
