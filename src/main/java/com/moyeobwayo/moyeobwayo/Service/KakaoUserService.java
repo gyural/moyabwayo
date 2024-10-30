@@ -36,7 +36,8 @@ public class KakaoUserService {
     }
     @Value("${KAKAO_REST_KEY}")
     private String KAKAO_REST_KEY;
-
+    @Value("${KAKAO_REDIRECT_URI}")
+    private String KAKAO_REDIRECT_URI;
     //UserList중에 카카오 유저만 함수 호출
     public Map<String, String> sendKakaoCompletMesage(List<UserEntity> users, Party party, Date completeDate) {
         Map<String, String> resultMap = new HashMap<>();
@@ -268,7 +269,7 @@ public class KakaoUserService {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
         params.add("grant_type", "authorization_code");
         params.add("client_id", KAKAO_REST_KEY); // 카카오 REST API 키
-        params.add("redirect_uri", "http://127.0.0.1:3000/login/oauth/callback/kakao"); // 설정된 리다이렉트 URI
+        params.add("redirect_uri", KAKAO_REDIRECT_URI); // 설정된 리다이렉트 URI
         params.add("code", code);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
