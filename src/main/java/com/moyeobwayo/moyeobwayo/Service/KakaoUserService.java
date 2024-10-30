@@ -325,9 +325,9 @@ public class KakaoUserService {
     }
 
     // 🌟 새로운 linkUserToKakaoWithKakaoId 메서드
-    public boolean linkUserToKakaoWithKakaoId(int currentUserId, String partyId, Long kakaoUserId) {
+    public boolean linkUserToKakaoWithKakaoId(int currentUserId, Long kakaoUserId) {
         // 1. 전달받은 currentUserId와 partyId로 UserEntity 조회
-        Optional<UserEntity> userOptional = userEntityRepository.findByIdAndPartyId(currentUserId, partyId);
+        Optional<UserEntity> userOptional = userEntityRepository.findByIdAndPartyId(currentUserId);
         if (userOptional.isEmpty()) {
             return false;  // 해당 UserEntity가 존재하지 않으면 연결 불가
         }
