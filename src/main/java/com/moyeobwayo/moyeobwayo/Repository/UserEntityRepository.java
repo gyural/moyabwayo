@@ -22,7 +22,7 @@ public interface UserEntityRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findUserInSameParty(@Param("userName") String userName, @Param("partyId") String partyId);
 
     // ★ 파티 ID가 String으로 처리되도록 변경
-    @Query("SELECT u FROM UserEntity u WHERE u.userId = :currentUserId AND u.party.partyId = :partyId")
+    @Query("SELECT u FROM UserEntity u WHERE u.userId = :currentUserId")
     Optional<UserEntity> findByIdAndPartyId(@Param("currentUserId") int currentUserId);
 
     List<UserEntity> findUserEntitiesByKakaoProfile_KakaoUserId(Long kakaoUserId);
