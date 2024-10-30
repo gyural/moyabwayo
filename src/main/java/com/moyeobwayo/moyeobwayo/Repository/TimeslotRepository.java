@@ -24,4 +24,8 @@ public interface TimeslotRepository extends JpaRepository<Timeslot, Long> {
     //특정 파티 timeslot에 해당 user가 있는지 확인
     @Query("SELECT COUNT(t) > 0 FROM Timeslot t WHERE t.userEntity.userId = :userId AND t.date.party.partyId = :partyId")
     boolean existsUserInPartyTimeslot(@Param("userId") Long userId, @Param("partyId") String partyId);
+
+    @Query("SELECT t FROM Timeslot t JOIN t.date d WHERE t.userEntity.userId = :userId AND d.party.partyId = :partyId")
+    List<Timeslot> findTimeslotsByUserAndParty(@Param("userId") Long userId, @Param("partyId") String partyId);
+
 }
