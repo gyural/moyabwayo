@@ -1,8 +1,10 @@
 package com.moyeobwayo.moyeobwayo.Service;
 
+import com.moyeobwayo.moyeobwayo.Domain.Alarm;
 import com.moyeobwayo.moyeobwayo.Domain.KakaoProfile;
 import com.moyeobwayo.moyeobwayo.Domain.Party;
 import com.moyeobwayo.moyeobwayo.Domain.UserEntity;
+import com.moyeobwayo.moyeobwayo.Repository.AlarmRepository;
 import com.moyeobwayo.moyeobwayo.Repository.KakaoProfileRepository;
 import com.moyeobwayo.moyeobwayo.Repository.UserEntityRepository;
 import org.json.simple.JSONArray;
@@ -29,10 +31,12 @@ public class KakaoUserService {
 
     private final KakaoProfileRepository kakaoProfileRepository;
     private final UserEntityRepository userEntityRepository;
+    private final AlarmRepository alarmRepository;
 
-    public KakaoUserService(KakaoProfileRepository kakaoProfileRepository, UserEntityRepository userEntityRepository) {
+    public KakaoUserService(KakaoProfileRepository kakaoProfileRepository, UserEntityRepository userEntityRepository, AlarmRepository alarmRepository) {
         this.kakaoProfileRepository = kakaoProfileRepository;
         this.userEntityRepository = userEntityRepository;
+        this.alarmRepository = alarmRepository;
     }
     @Value("${KAKAO_REST_KEY}")
     private String KAKAO_REST_KEY;
@@ -326,31 +330,33 @@ public class KakaoUserService {
     }
 
     // 🌟 새로운 linkUserToKakaoWithKakaoId 메서드
+    @Transactional
     public boolean linkUserToKakaoWithKakaoId(int currentUserId, Long kakaoUserId) {
-        // 1. 전달받은 currentUserId와 partyId로 UserEntity 조회
-        Optional<UserEntity> userOptional = userEntityRepository.findByIdAndPartyId(currentUserId);
-        if (userOptional.isEmpty()) {
-            return false;  // 해당 UserEntity가 존재하지 않으면 연결 불가
-        }
+        Optional<UserEntity> userOptional = userEntityRepository.findByIdAndPartyId(currentUserId); // 혼동 금지
+        if (userOptional.isEmpty()) return false;
+
+
+        Optional<KakaoProfile> kakaoProfileOptional = kakaoProfileRepository.findById(kakaoUserId);
+        if (kakaoProfileOptional.isEmpty()) return false;
 
         UserEntity userEntity = userOptional.get();
-
-        // 2. DB에서 전달받은 kakao_user_id로 KakaoProfile 조회
-        Optional<KakaoProfile> kakaoProfileOptional = kakaoProfileRepository.findById(kakaoUserId);
-        if (kakaoProfileOptional.isEmpty()) {
-            return false;  // 해당 KakaoProfile이 없으면 연결 불가
-        }
-
         KakaoProfile kakaoProfile = kakaoProfileOptional.get();
 
-        // 3. UserEntity에 KakaoProfile 연결
+        // 카카오 프로필과 유저 연결
         userEntity.setKakaoProfile(kakaoProfile);
+        userEntityRepository.save(userEntity);  // 유저 저장
 
-        // 4. DB에 UserEntity 저장
-        userEntityRepository.save(userEntity);
+        // ✨ 알람 생성 추가
+        Alarm newAlarm = new Alarm();
+        newAlarm.setUserEntity(userEntity);
+        newAlarm.setParty(userEntity.getParty());
+        newAlarm.setAlarm_on(true);
+
+        alarmRepository.save(newAlarm);  // 알람 저장
 
         return true;
     }
+
 
     public Integer getNearRemindMinute(Date targetDate) {
         // 현재 시간 가져오기
