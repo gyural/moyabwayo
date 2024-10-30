@@ -13,10 +13,7 @@ import com.moyeobwayo.moyeobwayo.Repository.DateEntityRepsitory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -143,4 +140,25 @@ public class TimeslotService {
                 timeslot.getByteString()
         );
     }
+
+    public Map<String, Object> getTimeslotsByUserAndParty(Long userId, String partyId) {
+        // 특정 파티와 유저에 대한 타임슬롯 조회
+        List<Timeslot> timeslots = timeslotRepository.findTimeslotsByUserAndParty(userId, partyId);
+
+        // 결과를 담을 Map 생성
+        Map<String, Object> result = new HashMap<>();
+        List<Map<String, Object>> dates = new ArrayList<>();
+
+        // 타임슬롯의 날짜별로 binaryString 생성 및 저장
+        for (Timeslot timeslot : timeslots) {
+            Map<String, Object> dateInfo = new HashMap<>();
+            dateInfo.put("dateId", timeslot.getDate().getDateId());
+            dateInfo.put("binaryString", timeslot.getByteString());
+            dates.add(dateInfo);
+        }
+
+        result.put("dates", dates);
+        return result;
+    }
+
 }

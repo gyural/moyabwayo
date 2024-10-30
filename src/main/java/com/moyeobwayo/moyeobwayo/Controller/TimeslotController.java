@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/timeslots")
@@ -66,4 +67,20 @@ public class TimeslotController {
         timeslotService.deleteTimeslot(timeslot_id, userId, partyId);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * POST /api/v1/timeslots/user-timeslots
+     * 특정 user, party id에 해당하는 개체의 모든 날짜별 타임슬롯 정보를 가져오기
+     */
+    @PostMapping("/user-timeslots")
+    public ResponseEntity<Map<String, Object>> getTimeslotsByUserAndParty(
+            @RequestBody Map<String, Object> request) {
+
+        Long userId = Long.parseLong(request.get("userId").toString());
+        String partyId = request.get("partyId").toString();
+
+        Map<String, Object> result = timeslotService.getTimeslotsByUserAndParty(userId, partyId);
+        return ResponseEntity.ok(result);
+    }
+
 }
