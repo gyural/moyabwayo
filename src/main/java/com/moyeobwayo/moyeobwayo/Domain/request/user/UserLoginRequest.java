@@ -13,7 +13,7 @@ public class UserLoginRequest {
     private String userName;
     private String password;
     private String partyId;  // 로그인 시 파티 ID도 함께 전달
-    private String KakaoUserId;
+    private Long KakaoUserId;
     @JsonProperty("isKakao")
     private boolean isKakao;  // 카카오 유저인지 여부 추가
 
