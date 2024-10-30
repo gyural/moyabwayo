@@ -27,13 +27,13 @@ public class KakaoUserController {
         return ResponseEntity.ok(profile);
     }
 
+
     @PostMapping("/link")
     public ResponseEntity<?> linkKakaoUser(@RequestBody LinkRequest request) {
         try {
             // 전달받은 kakao_user_id를 사용하여 기존 유저와 카카오 유저 연결
             boolean isLinked = kakaoUserService.linkUserToKakaoWithKakaoId(
                     request.getCurrentUserID(),    // LinkRequest의 필드 사용
-                    request.getPartyID(),
                     request.getKakaoUserId()
             );
             if (isLinked) {
