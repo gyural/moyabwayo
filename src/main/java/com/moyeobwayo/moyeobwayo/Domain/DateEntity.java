@@ -1,6 +1,7 @@
 package com.moyeobwayo.moyeobwayo.Domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.moyeobwayo.moyeobwayo.Domain.dto.TimeslotUserDTO;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -26,6 +27,11 @@ public class DateEntity {
     // @OneToMany(mappedBy = "date")
     @OneToMany(mappedBy = "date", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Timeslot> timeslots;
+
+    // !!!!!!!!!!!!!!!!!!!!! 추가됨 !!!!!!!!!!!!!!!!!!!!!!!
+    @Transient
+    private List<TimeslotUserDTO> convertedTimeslots;  // JSON 응답에 사용할 타임슬롯 변환 데이터
+    // !!!!!!!!!!!!!!!!!!!!! 추가됨 !!!!!!!!!!!!!!!!!!!!!!!
 
     @PostConstruct
     public void init() {
