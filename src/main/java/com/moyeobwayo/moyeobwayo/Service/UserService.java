@@ -4,6 +4,7 @@ import com.moyeobwayo.moyeobwayo.Domain.Alarm;
 import com.moyeobwayo.moyeobwayo.Domain.KakaoProfile;
 import com.moyeobwayo.moyeobwayo.Domain.Party;
 import com.moyeobwayo.moyeobwayo.Domain.UserEntity;
+import com.moyeobwayo.moyeobwayo.Domain.request.user.UserLoginRequest;
 import com.moyeobwayo.moyeobwayo.Domain.response.UserResponse;
 import com.moyeobwayo.moyeobwayo.Repository.AlarmRepository;
 import com.moyeobwayo.moyeobwayo.Repository.KakaoProfileRepository;
@@ -31,7 +32,15 @@ public class UserService {
     }
 
     // 사용자 로그인 및 등록 처리
-    public Optional<UserResponse> loginOrRegister(String userName, String password, String partyId, boolean isKakao, long kakaoUserId) {
+    public Optional<UserResponse> loginOrRegister(UserLoginRequest request) {
+        String userName = request.getUserName();
+        String password = request.getPassword();
+        String partyId = request.getPartyId();
+        boolean isKakao = request.isKakao();
+        Long kakaoUserId = request.getKakaoUserId().orElse(0L);
+        if(isKakao == true && kakaoUserId != 0L){
+            userName = userName + "(" + kakaoUserId + ")";
+        }
         // 파티 ID로 해당 파티 조회
         Optional<Party> partyOptional = partyRepository.findById(partyId);
         if (partyOptional.isEmpty()) {
@@ -40,7 +49,7 @@ public class UserService {
         Party party = partyOptional.get(); // 파티가 존재하면 파티 객체를 가져옴
 
         // 기존 사용자 확인
-        Optional<UserEntity> existingUser = userRepository.findUserInSameParty(userName + "_" + kakaoUserId, partyId);
+        Optional<UserEntity> existingUser = userRepository.findUserInSameParty(userName, partyId);
         if (existingUser.isPresent()) {
             // 기존 사용자가 있으면 비밀번호 확인 후 로그인 처리
             UserEntity user = existingUser.get();
@@ -53,11 +62,13 @@ public class UserService {
 
         // 사용자가 없으면 새로 회원가입 (회원가입 기능)
         UserEntity newUser = new UserEntity();
-        newUser.setUserName(userName + "_" + kakaoUserId); // 카카오 유저 ID를 붙임
+        newUser.setUserName(userName); // 카카오 유저 ID를 붙임
         newUser.setPassword(password);
         newUser.setParty(party);
         KakaoProfile kakaoProfile = kakaoProfileRepository.findById(kakaoUserId).orElse(null);
-        newUser.setKakaoProfile(kakaoProfile);
+        if(kakaoProfile != null) {
+            newUser.setKakaoProfile(kakaoProfile);
+        }
         // 새로운 사용자는 DB에 저장.
         newUser = userRepository.save(newUser);
 

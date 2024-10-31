@@ -5,16 +5,22 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.Optional;
+
 @Getter
 @Setter
 @ToString
 public class UserLoginRequest {
-    // DTO
     private String userName;
     private String password;
-    private String partyId;  // 로그인 시 파티 ID도 함께 전달
-    private Long KakaoUserId;
-    @JsonProperty("isKakao")
-    private boolean isKakao;  // 카카오 유저인지 여부 추가
+    private String partyId;
+    @JsonProperty("kakaoUserId")
+    private Long kakaoUserId; // 그대로 유지
 
+    @JsonProperty("isKakao")
+    private boolean isKakao;
+
+    public Optional<Long> getKakaoUserId() {
+        return Optional.ofNullable(kakaoUserId);
+    }
 }
