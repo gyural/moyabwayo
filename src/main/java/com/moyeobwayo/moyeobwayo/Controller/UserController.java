@@ -67,6 +67,7 @@ public class UserController {
             // 예외 발생 시 로그 출력 및 500 오류 반환
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류: " + e.getMessage());
+
         }
     }
 }
