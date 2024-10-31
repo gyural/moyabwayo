@@ -3,12 +3,14 @@ package com.moyeobwayo.moyeobwayo.Service;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Date;
 
 @Service
 public class JwtService {
-    private final String SECRET_KEY = "donggeunisgreatestintheworldshihyunisprettestintheworld";
+    @Value("${SECRET_KEY}")
+    private String secretKey;
 
     public String generateToken(Long kakaoUserId, String nickname, String profileImage) {
         return Jwts.builder()
@@ -17,7 +19,7 @@ public class JwtService {
                 .claim("profile_image", profileImage)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24)) // 만료 시간 설정
-                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
+                .signWith(SignatureAlgorithm.HS256, secretKey)
                 .compact();
     }
 }
