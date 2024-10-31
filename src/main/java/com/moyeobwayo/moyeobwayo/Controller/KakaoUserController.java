@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("api/v1/kakaoUser")
 public class KakaoUserController {
@@ -23,8 +26,14 @@ public class KakaoUserController {
 
     @PostMapping("/create")
     public ResponseEntity<?> createKakaoUser(@RequestBody KakaoUserCreateRequest request) {
-        KakaoProfile profile = kakaoUserService.createUser(request.getCode());
-        return ResponseEntity.ok(profile);
+        // 사용자 생성 및 JWT 토큰 생성
+        String token = kakaoUserService.createUserAndGenerateToken(request.getCode());
+
+        // JWT 토큰을 JSON 응답으로 반환
+        Map<String, String> response = new HashMap<>();
+        response.put("token", token);
+
+        return ResponseEntity.ok(response);
     }
 
 

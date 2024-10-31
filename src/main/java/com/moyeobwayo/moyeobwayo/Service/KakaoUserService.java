@@ -32,11 +32,13 @@ public class KakaoUserService {
     private final KakaoProfileRepository kakaoProfileRepository;
     private final UserEntityRepository userEntityRepository;
     private final AlarmRepository alarmRepository;
+    private final JwtService jwtService;
 
-    public KakaoUserService(KakaoProfileRepository kakaoProfileRepository, UserEntityRepository userEntityRepository, AlarmRepository alarmRepository) {
+    public KakaoUserService(KakaoProfileRepository kakaoProfileRepository, UserEntityRepository userEntityRepository, AlarmRepository alarmRepository, JwtService jwtService) {
         this.kakaoProfileRepository = kakaoProfileRepository;
         this.userEntityRepository = userEntityRepository;
         this.alarmRepository = alarmRepository;
+        this.jwtService = jwtService;
     }
     @Value("${KAKAO_REST_KEY}")
     private String KAKAO_REST_KEY;
@@ -244,9 +246,22 @@ public class KakaoUserService {
     }
 
 
-    // 🌟 카카오 유저생성 및 조회로직
+    // 카카오 유저 생성 후 JWT 토큰 생성 및 반환
+    public String createUserAndGenerateToken(String code) {
+        // 1. createUser 메서드를 통해 DB에 프로필 저장
+        KakaoProfile kakaoProfile = createUser(code);
+
+        // 2. 저장된 프로필 정보로 JWT 토큰 생성
+        return jwtService.generateToken(
+                kakaoProfile.getKakaoUserId(),
+                kakaoProfile.getNickname(),
+                kakaoProfile.getProfile_image()
+        );
+    }
+
+    // 기존 createUser 메서드
     public KakaoProfile createUser(String code) {
-        // 1. 인가 코드로 액세스 토큰, 리프레시 토큰, 만료 시간 가져오기
+        // 카카오 API를 통해 인가 코드로 액세스 및 리프레시 토큰, 만료 시간 가져오기
         Map<String, Object> tokenInfo = getAccessTokenFromKakao(code);
 
         // 2. 액세스 토큰으로 사용자 정보 조회
