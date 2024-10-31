@@ -435,4 +435,14 @@ public class PartyService {
         }
     }
 
+    /**
+     * 특정 파티에 속하는 모든 유저 정보를 반환
+     * @param partyId 파티 ID
+     * @return List<UserEntity>
+     */
+    public List<UserEntity> findUsersByPartyId(String partyId) {
+        // 파티 ID를 통해 해당 파티에 속한 모든 유저를 조회
+        return userRepository.findAllByParty_PartyId(partyId);
+    }
+
 }

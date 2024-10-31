@@ -1,7 +1,9 @@
 package com.moyeobwayo.moyeobwayo.Controller;
 
 import com.moyeobwayo.moyeobwayo.Domain.Party;
+import com.moyeobwayo.moyeobwayo.Domain.UserEntity;
 import com.moyeobwayo.moyeobwayo.Domain.dto.PartyResponseDTO;
+import com.moyeobwayo.moyeobwayo.Domain.dto.PartyUserResponseDTO;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCompleteRequest;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCreateRequest;
 import com.moyeobwayo.moyeobwayo.Domain.response.PartyCompleteResponse;
@@ -93,5 +95,31 @@ public class PartyController {
     public ResponseEntity<?> updateParty(@PathVariable String partyId, @RequestBody PartyCreateRequest partyUpdateRequest) {
         return partyService.updateParty(partyId, partyUpdateRequest);
     }
+
+    /**
+     * 파티에 참여하는 유저들의 정보 가져오기
+     * (모든 유저들의 정보를 건네주고, 그 중 카카오 유저인 경우에는 해당 카카오 정보만 전달)
+     * (일반 유저는 사진을 null값으로 전달해주고, 카카오 유저는 카카오 유저 테이블의 사진을 전달)
+     * GET api/v1/party/{partyId}/users
+     */
+    @GetMapping("/{partyId}/users")
+    public ResponseEntity<List<PartyUserResponseDTO>> getPartyUsers(@PathVariable String partyId) {
+        // 1. 파티의 유저 목록 가져오기
+        List<UserEntity> users = partyService.findUsersByPartyId(partyId);
+
+        // 2. 유저 정보를 PartyUserResponseDTO로 변환
+        List<PartyUserResponseDTO> userResponses = users.stream().map(user -> {
+            String profileImage = null;
+            if (user.getKakaoProfile() != null) {
+                profileImage = user.getKakaoProfile().getProfile_image(); // 카카오 유저는 이미지 제공
+            }
+            return new PartyUserResponseDTO(user.getUserId(), user.getUserName(), profileImage);
+        }).toList();
+
+        // 3. 유저 정보 리스트 반환
+        return ResponseEntity.ok(userResponses);
+    }
+
+
 
 }

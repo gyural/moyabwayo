@@ -335,7 +335,6 @@ public class KakaoUserService {
         Optional<UserEntity> userOptional = userEntityRepository.findByIdAndPartyId(currentUserId); // 혼동 금지
         if (userOptional.isEmpty()) return false;
 
-
         Optional<KakaoProfile> kakaoProfileOptional = kakaoProfileRepository.findById(kakaoUserId);
         if (kakaoProfileOptional.isEmpty()) return false;
 
