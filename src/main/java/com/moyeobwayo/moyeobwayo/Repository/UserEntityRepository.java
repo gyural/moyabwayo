@@ -28,4 +28,6 @@ public interface UserEntityRepository extends JpaRepository<UserEntity, Long> {
     List<UserEntity> findUserEntitiesByKakaoProfile_KakaoUserId(Long kakaoUserId);
 
     Optional<UserEntity> findByKakaoProfile_KakaoUserId(Long kakaoUserId);
+
+    List<UserEntity> findAllByParty_PartyId(String partyId);
 }
