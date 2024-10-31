@@ -21,6 +21,7 @@ public class KakaoUserController {
         this.kakaoUserService = kakaoUserService;
     }
 
+
     @PostMapping("/create")
     public ResponseEntity<?> createKakaoUser(@RequestBody KakaoUserCreateRequest request) {
         KakaoProfile profile = kakaoUserService.createUser(request.getCode());
