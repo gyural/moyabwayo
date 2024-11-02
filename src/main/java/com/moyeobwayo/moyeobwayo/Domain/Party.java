@@ -28,9 +28,12 @@ public class Party {
     private String partyDescription;
     private Date startDate;
     private String locationName;
+
     @Column(name = "end_date") // jpa를 통한 삭제를 위해(카멜형으로)
     private Date endDate;
-    private Date decisionDate;
+
+    private boolean decisionDate; // boolean으로 변경
+
     private String userId; // 새롭게 추가
 
     @OneToMany(mappedBy = "party")
