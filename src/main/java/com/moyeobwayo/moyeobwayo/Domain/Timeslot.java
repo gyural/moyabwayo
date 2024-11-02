@@ -13,6 +13,11 @@ import java.util.TimeZone;
 @Entity
 @Getter @Setter
 @AllArgsConstructor @NoArgsConstructor
+@Table(
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"date_id", "user_id"})
+        }
+)
 public class Timeslot {
 
     @Id
