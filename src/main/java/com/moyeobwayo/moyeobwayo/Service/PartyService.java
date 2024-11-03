@@ -84,9 +84,12 @@ public class PartyService {
         Date reqDate = partyCompleteRequest.getCompleteTime();
         Date endDate = partyCompleteRequest.getEndTime();
         String locationName = partyCompleteRequest.getLocationName() != null ? partyCompleteRequest.getLocationName() : "미정";
+
         // 확정 시간 DB 반영
-        party.setDecisionDate(reqDate);
+        // **수정**: decisionDate을 boolean로 설정
+        party.setDecisionDate(true); // 파티 확정을 의미하는 boolean 값 설정
         party.setLocationName(locationName);
+
         try {
             List<UserEntity> possibleUsers = getPossibleUsers(party, reqDate, endDate, partyCompleteRequest.getDateId());
             // 메시지 전송
@@ -187,8 +190,10 @@ public class PartyService {
             party.setPartyDescription(partyCreateRequest.getPartyDescription());
             party.setStartDate(partyCreateRequest.getStartTime());
             party.setEndDate(partyCreateRequest.getEndTime());
-            party.setDecisionDate(partyCreateRequest.getDecisionDate());
+            //**수정**
+            party.setDecisionDate(false);  // 파티 생성 시 확정되지 않음을 의미하는 false 값 설정
             party.setUserId(partyCreateRequest.getUserId());
+
             party= partyRepository.save(party); // db에 저장 후 저장된 객체 반환(자동 생성된 id를 가져오기 위해)
 
             // 방금 생성한 Party 테이블 튜플의 pk 가져오기
@@ -381,7 +386,10 @@ public class PartyService {
             existingParty.setPartyDescription(partyUpdateRequest.getPartyDescription());
             existingParty.setStartDate(partyUpdateRequest.getStartTime());
             existingParty.setEndDate(partyUpdateRequest.getEndTime());
-            existingParty.setDecisionDate(partyUpdateRequest.getDecisionDate());
+
+            // **수정**: boolean 타입에 맞게 변경된 decisionDate 설정
+            existingParty.setDecisionDate(partyUpdateRequest.isDecisionDate()); // boolean 값으로 설정
+
             existingParty.setUserId(partyUpdateRequest.getUserId());
 
             // 3. DateEntity 업데이트 (기존 리스트를 제거 후 새로 추가)
