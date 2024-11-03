@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.moyeobwayo.moyeobwayo.Domain.dto.AvailableTime;
+import com.moyeobwayo.moyeobwayo.Repository.DecisionRepository; // 추가됨
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -22,6 +23,7 @@ import java.util.Set;
 
 import java.util.*;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +35,7 @@ public class PartyService {
     private final DateEntityRepsitory dateEntityRepsitory;
     private final KakaoUserService kakaoUserService;
     private final AlarmRepository alarmRepository;
+    private final DecisionRepository decisionRepository;
 
 
     public void updateAlarmStatus(String partyId, String alarmStatus) {
@@ -81,21 +84,47 @@ public class PartyService {
         Party party = partyRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Error: Party not found with id " + id));
 
-        Date reqDate = partyCompleteRequest.getCompleteTime();
-        Date endDate = partyCompleteRequest.getEndTime();
+        // Start and end time 설정
+        Date startTime = partyCompleteRequest.getCompleteTime();
+        Date endTime = partyCompleteRequest.getEndTime();
         String locationName = partyCompleteRequest.getLocationName() != null ? partyCompleteRequest.getLocationName() : "미정";
+
+        // !!!!!!!!!!!!! 추가 됨 !!!!!!!!!!!!!!!!!!!!
+        List<String> possibleUsersName = partyCompleteRequest.getUsers();
+        List<String> possibleUsersId = partyCompleteRequest.getUsersId();
+
+        // 파티에 속한 모든 유저 조회
+        List<UserEntity> partyUsers = userRepository.findAllByParty_PartyId(id);
+
+        // 가능한 유저 ID와 비교하여 불가능한 유저 필터링
+        List<String> impossibleUsers = partyUsers.stream()
+                .filter(user -> !possibleUsersId.contains(user.getUserId().toString()))
+                .map(UserEntity::getUserName)
+                .collect(Collectors.toList());
+
+
+        // 새로운 Decision 엔티티 생성 및 설정
+        Decision decision = new Decision();
+        decision.setPartyId(id);
+        decision.setStartTime(startTime);
+        decision.setEndTime(endTime);
+        decision.setPossibleUsers(possibleUsersName);
+        decision.setImpossibleUsers(impossibleUsers); // 불가능한 유저 리스트 추가
+        decisionRepository.save(decision);
+        // !!!!!!!!!!!!! 추가 됨 !!!!!!!!!!!!!!!!!!!!
 
         // 확정 시간 DB 반영
         // **수정**: decisionDate을 boolean로 설정
         party.setDecisionDate(true); // 파티 확정을 의미하는 boolean 값 설정
         party.setLocationName(locationName);
+        partyRepository.save(party);
 
         try {
-            List<UserEntity> possibleUsers = getPossibleUsers(party, reqDate, endDate, partyCompleteRequest.getDateId());
+            List<UserEntity> possibleUsers = getPossibleUsers(party, startTime, endTime, partyCompleteRequest.getDateId());
             // 메시지 전송
             System.out.println("possibleUsers");
             System.out.println(possibleUsers);
-            Map<String, String> userMessageResponse = kakaoUserService.sendKakaoCompletMesage(possibleUsers, party, reqDate);
+            Map<String, String> userMessageResponse = kakaoUserService.sendKakaoCompletMesage(possibleUsers, party, startTime);
             // 카카오 메시지를 보낼 수 없는 유저들 추가
             for (UserEntity user : possibleUsers) {
                 // 메시지를 보낸 유저만 map에 포함되어 있으므로, 포함되지 않은 유저에게 "카카오 유저가 아님"을 추가
@@ -276,10 +305,12 @@ public class PartyService {
                         // 비트가 '0'이면 현재 범위가 끝났음을 기록하고 추가
                         if (inAvailableRange) {
                             timeSlots.add(new TimeSlot(
-                                    slot.getUserEntity().getUserName(),
+                                    slot.getUserEntity().getUserId(),          // userId 설정
+                                    slot.getUserEntity().getUserName(),        // userName 설정
                                     rangeStart,
                                     currentTimePoint  // 종료 시간은 현재 30분 후
                             ));
+
                             inAvailableRange = false;
                         }
                     }
@@ -288,7 +319,8 @@ public class PartyService {
                 // 만약 마지막 구간이 1로 끝났다면 종료 시간까지의 구간 추가
                 if (inAvailableRange) {
                     timeSlots.add(new TimeSlot(
-                            slot.getUserEntity().getUserName(),
+                            slot.getUserEntity().getUserId(),       // userId 설정
+                            slot.getUserEntity().getUserName(),     // userName 설정
                             rangeStart,
                             endTime  // 마지막 종료 시간을 파티 종료 시간으로 설정
                     ));
@@ -307,28 +339,27 @@ public class PartyService {
      * @return List<AvailableTime>
      */
     public List<AvailableTime> findAvailableTimes(List<TimeSlot> timeSlots) {
-        // 모든 시작 및 종료 시간 추출
         Set<LocalDateTime> timePoints = new HashSet<>();
         for (TimeSlot slot : timeSlots) {
             timePoints.add(slot.getStart());
             timePoints.add(slot.getEnd());
         }
 
-        // 시간 순서대로 정렬
         List<LocalDateTime> sortedTimePoints = new ArrayList<>(timePoints);
         Collections.sort(sortedTimePoints);
 
-        // 가능한 모든 시간 범위 생성
         List<AvailableTime> availableTimes = new ArrayList<>();
         for (int i = 0; i < sortedTimePoints.size() - 1; i++) {
             LocalDateTime start = sortedTimePoints.get(i);
             LocalDateTime end = sortedTimePoints.get(i + 1);
-            List<String> usersAvailable = new ArrayList<>();
+            List<Map<String, Object>> usersAvailable = new ArrayList<>();
 
-            // 각 사용자에 대해 해당 시간 범위에 가능한지 확인
             for (TimeSlot slot : timeSlots) {
                 if (!slot.getStart().isAfter(start) && !slot.getEnd().isBefore(end)) {
-                    usersAvailable.add(slot.getUser());
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("userId", slot.getUserId());       // 사용자 ID 추가
+                    userMap.put("userName", slot.getUserName());   // 사용자 이름 추가
+                    usersAvailable.add(userMap);
                 }
             }
 
@@ -337,11 +368,10 @@ public class PartyService {
             }
         }
 
-        // 가능한 사용자 수에 따라 정렬
         availableTimes.sort((a, b) -> b.getUsers().size() - a.getUsers().size());
-
         return availableTimes;
     }
+
 
     /**
      * 만료된 파티를 삭제하는 메서드(url을 통해 접근하지 않기에 컨트롤러 없음)

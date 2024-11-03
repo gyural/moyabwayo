@@ -26,6 +26,9 @@ public class PartyCompleteRequest {
     private Date endTime;
     private String locationName;
     private long dateId;
+    private List<String> users;      // JSON 배열을 직접 받을 수 있도록 수정
+    private List<String> usersId;    // JSON 배열을 직접 받을 수 있도록 수정
+
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
