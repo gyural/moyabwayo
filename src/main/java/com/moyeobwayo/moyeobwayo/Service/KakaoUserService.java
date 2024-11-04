@@ -4,6 +4,7 @@ import com.moyeobwayo.moyeobwayo.Domain.Alarm;
 import com.moyeobwayo.moyeobwayo.Domain.KakaoProfile;
 import com.moyeobwayo.moyeobwayo.Domain.Party;
 import com.moyeobwayo.moyeobwayo.Domain.UserEntity;
+import com.moyeobwayo.moyeobwayo.Domain.response.KakaoUserCreateResponse;
 import com.moyeobwayo.moyeobwayo.Repository.AlarmRepository;
 import com.moyeobwayo.moyeobwayo.Repository.KakaoProfileRepository;
 import com.moyeobwayo.moyeobwayo.Repository.UserEntityRepository;
@@ -18,6 +19,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -247,35 +249,51 @@ public class KakaoUserService {
 
 
     // 카카오 유저 생성 후 JWT 토큰 생성 및 반환
-    public String createUserAndGenerateToken(String code) {
-        // 1. createUser 메서드를 통해 DB에 프로필 저장
-        KakaoProfile kakaoProfile = createUser(code);
+    public KakaoUserCreateResponse createUserAndGenerateToken(String code) {
+        // 1. Create user and save profile in the DB
+        Map<String, Object> targetUser = createUser(code);
+        // 2. Retrieve the KakaoProfile and talkCalendarOn from the result map
+        KakaoProfile kakaoProfile = (KakaoProfile) targetUser.get("kakaoProfile");
+        boolean talkCalendarOn = (boolean) targetUser.get("talkCalendarOn");
 
-        // 2. 저장된 프로필 정보로 JWT 토큰 생성
-        return jwtService.generateToken(
+        // 3. Generate JWT token using the saved profile information
+        String token = jwtService.generateToken(
                 kakaoProfile.getKakaoUserId(),
                 kakaoProfile.getNickname(),
                 kakaoProfile.getProfile_image()
         );
+
+        // Optionally, you could include the token in the response object if needed
+        // return new KakaoUserResponse(kakaoProfile, talkCalendarOn, token);
+
+        return new KakaoUserCreateResponse(token, talkCalendarOn);
     }
 
     // 기존 createUser 메서드
-    public KakaoProfile createUser(String code) {
-        // 카카오 API를 통해 인가 코드로 액세스 및 리프레시 토큰, 만료 시간 가져오기
+    public Map<String, Object> createUser(String code) {
+        // 1. Retrieve access and refresh tokens, and expiration times using the authorization code
         Map<String, Object> tokenInfo = getAccessTokenFromKakao(code);
 
-        // 2. 액세스 토큰으로 사용자 정보 조회
+        // 2. Get user profile with the access token
         String accessToken = (String) tokenInfo.get("access_token");
         KakaoProfile kakaoProfile = getKakaoUserProfile(accessToken);
+        boolean talkCalendarOn = getKakaoUserScopeAgreed(accessToken);
 
-        // 3. 액세스 토큰 및 리프레시 토큰, 만료 시간 설정
+        // 3. Set tokens and expiration times in the KakaoProfile object
         kakaoProfile.setAccess_token(accessToken);
         kakaoProfile.setRefresh_token((String) tokenInfo.get("refresh_token"));
         kakaoProfile.setExpires_in(convertToLong(tokenInfo.get("expires_in")));
         kakaoProfile.setRefresh_token_expires_in(convertToLong(tokenInfo.get("refresh_token_expires_in")));
 
-        // 4. DB에 저장
-        return kakaoProfileRepository.save(kakaoProfile);
+        // 4. Save the KakaoProfile to the database
+        KakaoProfile savedProfile = kakaoProfileRepository.save(kakaoProfile);
+
+        // 5. Create a result map to include the KakaoProfile and the talkCalendarOn status
+        Map<String, Object> result = new HashMap<>();
+        result.put("kakaoProfile", savedProfile);
+        result.put("talkCalendarOn", talkCalendarOn);
+
+        return result;
     }
 
     // 인가 코드를 통해 액세스 토큰, 리프레시 토큰, 만료 시간 정보 가져오기
@@ -310,7 +328,6 @@ public class KakaoUserService {
 
         ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
         Map<String, Object> body = response.getBody();
-
         // 사용자 정보 추출 및 KakaoProfile 객체 생성
         Map<String, Object> kakaoAccount = (Map<String, Object>) body.get("kakao_account");
         Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
@@ -404,6 +421,36 @@ public class KakaoUserService {
 
         kakaoProfileRepository.save(kakaoProfile);  // DB에 저장하여 반영
         return true;
+    }
+
+    private boolean getKakaoUserScopeAgreed(String accessToken) {
+        String baseUrl = "https://kapi.kakao.com/v2/user/scopes";
+        String url = UriComponentsBuilder.fromHttpUrl(baseUrl)
+                .queryParam("scopes", "[\"talk_calendar\"]")
+                .build()
+                .toString();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+
+        HttpEntity<?> entity = new HttpEntity<>(headers);
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+        Map<String, Object> body = response.getBody();
+
+        // Extract scope data
+        List<Map<String, Object>> scopes = (List<Map<String, Object>>) body.get("scopes");
+
+        // Find the "agreed" status for "talk_calendar" scope
+        for (Map<String, Object> scope : scopes) {
+            if ("talk_calendar".equals(scope.get("id"))) {
+                return (Boolean) scope.get("agreed"); // Return true or false
+            }
+        }
+
+        // Default return if the scope is not found or no agreed status available
+        return false;
     }
 }
 

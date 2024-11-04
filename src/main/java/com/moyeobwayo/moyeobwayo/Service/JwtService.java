@@ -13,6 +13,7 @@ public class JwtService {
     private String secretKey;
 
     public String generateToken(Long kakaoUserId, String nickname, String profileImage) {
+        System.out.println(profileImage);
         return Jwts.builder()
                 .claim("kakao_user_id", kakaoUserId)
                 .claim("nickname", nickname)
