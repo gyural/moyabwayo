@@ -4,6 +4,7 @@ import com.moyeobwayo.moyeobwayo.Domain.KakaoProfile;
 import com.moyeobwayo.moyeobwayo.Domain.request.KakaoUserCreateRequest;
 import com.moyeobwayo.moyeobwayo.Domain.request.KakaoUserUpdateRequest;
 import com.moyeobwayo.moyeobwayo.Domain.request.LinkRequest;
+import com.moyeobwayo.moyeobwayo.Domain.response.KakaoUserCreateResponse;
 import com.moyeobwayo.moyeobwayo.Service.KakaoUserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,11 +28,12 @@ public class KakaoUserController {
     @PostMapping("/create")
     public ResponseEntity<?> createKakaoUser(@RequestBody KakaoUserCreateRequest request) {
         // 사용자 생성 및 JWT 토큰 생성
-        String token = kakaoUserService.createUserAndGenerateToken(request.getCode());
+        KakaoUserCreateResponse userResponse = kakaoUserService.createUserAndGenerateToken(request.getCode());
 
-        // JWT 토큰을 JSON 응답으로 반환
-        Map<String, String> response = new HashMap<>();
-        response.put("token", token);
+        // 응답 객체 생성
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", userResponse.getToken());
+        response.put("talkCalendarOn", userResponse.isTalkCalendarOn());
 
         return ResponseEntity.ok(response);
     }
