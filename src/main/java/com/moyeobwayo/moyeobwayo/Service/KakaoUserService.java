@@ -367,6 +367,14 @@ public class KakaoUserService {
         Optional<UserEntity> userOptional = userEntityRepository.findByIdAndPartyId(currentUserId); // 혼동 금지
         if (userOptional.isEmpty()) return false;
 
+        // 이미 연결된 계정 막기-------------------
+        UserEntity alreadyuserEntity = userOptional.get();
+
+        // 이미 연결된 경우 아무 작업도 하지 않고 true 반환
+        if (alreadyuserEntity.getKakaoProfile() != null) {
+            return true;  // 이미 연결된 경우에도 성공적으로 처리한 것으로 간주
+        }
+
         Optional<KakaoProfile> kakaoProfileOptional = kakaoProfileRepository.findById(kakaoUserId);
         if (kakaoProfileOptional.isEmpty()) return false;
 
