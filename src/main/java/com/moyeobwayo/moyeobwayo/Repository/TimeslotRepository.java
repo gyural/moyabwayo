@@ -28,4 +28,8 @@ public interface TimeslotRepository extends JpaRepository<Timeslot, Long> {
     @Query("SELECT t FROM Timeslot t JOIN t.date d WHERE t.userEntity.userId = :userId AND d.party.partyId = :partyId")
     List<Timeslot> findTimeslotsByUserAndParty(@Param("userId") Long userId, @Param("partyId") String partyId);
 
+    // 특정 userId에 해당하는 모든 타임슬롯 조회
+    @Query("SELECT t FROM Timeslot t WHERE t.userEntity.userId = :userId")
+    List<Timeslot> findTimeslotsByUserId(@Param("userId") Long userId);
+
 }
