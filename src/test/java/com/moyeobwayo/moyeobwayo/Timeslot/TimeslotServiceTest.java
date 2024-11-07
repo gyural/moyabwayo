@@ -53,7 +53,7 @@ public class TimeslotServiceTest {
         user.setUserId(9L);
 
         DateEntity date = new DateEntity();
-        date.setDateId(2);
+        date.setDateId(2L);
 
         Timeslot timeslot = new Timeslot();
         timeslot.setUserEntity(user);
@@ -64,7 +64,7 @@ public class TimeslotServiceTest {
         Date endTime = new Date(startTime.getTime() + 3600000); // 1시간 후
 
         Mockito.when(userEntityRepository.findById(9L)).thenReturn(Optional.of(user));
-        Mockito.when(dateEntityRepsitory.findById(2)).thenReturn(Optional.of(date));
+        Mockito.when(dateEntityRepsitory.findById(2L)).thenReturn(Optional.of(date));
         Mockito.when(timeslotRepository.save(Mockito.any(Timeslot.class))).thenReturn(timeslot);
         //일시적 에러로 인한 주석처리
         //Timeslot createdTimeslot = timeslotService.createTimeslot(timeslot);

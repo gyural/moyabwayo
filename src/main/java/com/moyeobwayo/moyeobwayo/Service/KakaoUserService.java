@@ -285,7 +285,9 @@ public class KakaoUserService {
         kakaoProfile.setExpires_in(convertToLong(tokenInfo.get("expires_in")));
         kakaoProfile.setRefresh_token_expires_in(convertToLong(tokenInfo.get("refresh_token_expires_in")));
 
-        // 4. Save the KakaoProfile to the database
+        // 4. default Alarm State Setting
+        kakaoProfile.setAlarm_off(false);
+        // 5. Save the KakaoProfile to the database
         KakaoProfile savedProfile = kakaoProfileRepository.save(kakaoProfile);
 
         // 5. Create a result map to include the KakaoProfile and the talkCalendarOn status
