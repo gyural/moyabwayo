@@ -30,10 +30,18 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'org.postgresql:postgresql:42.7.3'
 	testImplementation 'org.postgresql:postgresql:42.7.3'
+	implementation 'org.apache.httpcomponents:httpclient:4.5.13'
+	implementation 'org.apache.httpcomponents:httpcore:4.4.13'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'com.jayway.jsonpath:json-path'
+	implementation 'org.json:json:20210307'
+	implementation 'org.springframework.boot:spring-boot-configuration-processor:2.7.4'
+
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'  // 최신 버전
+	implementation 'com.fasterxml.jackson.core:jackson-annotations:2.15.2'  // 최신 버전
+	implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'  // 최신 버전
 	//JSON 도구
 	implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
 	implementation 'org.bgee.log4jdbc-log4j2:log4jdbc-log4j2-jdbc4.1:1.16'
