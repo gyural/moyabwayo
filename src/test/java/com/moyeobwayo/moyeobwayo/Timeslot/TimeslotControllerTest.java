@@ -31,14 +31,14 @@ public class TimeslotControllerTest {
     @Test
     public void testCreateTimeslot() throws Exception {
         Timeslot timeslot = new Timeslot();
-        timeslot.setSlotId(1);
+        timeslot.setSlotId(1L);
 
         UserEntity userEntity = new UserEntity();
         userEntity.setUserId(9L);
         timeslot.setUserEntity(userEntity);
 
         DateEntity dateEntity = new DateEntity();
-        dateEntity.setDateId(2);
+        dateEntity.setDateId(2L);
         timeslot.setDate(dateEntity);
 
         //Mockito.when(timeslotService.createTimeslot(Mockito.any(Timeslot.class))).thenReturn(timeslot);
