@@ -40,44 +40,48 @@ public class TimeslotService {
         DateEntity date = dateEntityRepsitory.findById((long) dto.getDateId())
                 .orElseThrow(() -> new IllegalArgumentException("날짜를 찾을 수 없습니다: " + dto.getDateId()));
 
-        // 해당 date에 해당하는 모든 timeslot 가져오기
-        List<Timeslot> timeslots = timeslotRepository.findTimeslotsByUserIdAndDateId(date.getDateId());
+        // 현재 userId에 해당하는 모든 타임슬롯 가져오기 (요청 전 상태 확인)
+        List<Timeslot> userTimeslotsBefore = timeslotRepository.findTimeslotsByUserId((long) dto.getUserId());
+        boolean hadAnyActiveTimeslot = userTimeslotsBefore.stream().anyMatch(ts -> ts.getByteString().contains("1")); // 기존 상태 확인
 
-        // 요청받은 userId가 존재하는지 확인
-        Optional<Timeslot> optionalTimeslot = timeslots.stream()
-                .filter(t -> t.getUserEntity().getUserId().equals(user.getUserId()))
+        // 타임슬롯 업데이트 또는 생성
+        Optional<Timeslot> existingTimeslot = userTimeslotsBefore.stream()
+                .filter(t -> t.getDate().getDateId().equals((long) dto.getDateId()))
                 .findFirst();
 
-        if (optionalTimeslot.isPresent()) {
-            System.out.println("기존 Timeslot이 존재합니다.");
-            return updateTimeslot(optionalTimeslot.get(), dto, date); // 첫 번째 요소 업데이트
+        Timeslot timeslot;
+        if (existingTimeslot.isPresent()) {
+            timeslot = existingTimeslot.get();
+            timeslot.setByteString(dto.getBinaryString());
         } else {
-            System.out.println("새로운 Timeslot 생성 중...");
-            String byteString = dto.getBinaryString();
-
-            // 시작 시간과 종료 시간을 가져오기
-            Date startTime = date.getParty().getStartDate();
-            Date endTime = date.getParty().getEndDate();
-            // byteString 검증 메서드 호출
-            validateByteString(byteString, startTime, endTime);
-
-            Timeslot timeslot = new Timeslot();
+            timeslot = new Timeslot();
             timeslot.setUserEntity(user);
             timeslot.setDate(date);
-            timeslot.setByteString(byteString);
-
-            // 해당 유저가 파티에 참여 중인지 확인
-            boolean newUserFlag = timeslotRepository.existsUserInPartyTimeslot(user.getUserId(), date.getParty().getPartyId());
-            if (newUserFlag) {
-                Party targetParty = partyRepository.findById(date.getParty().getPartyId())
-                        .orElseThrow(() -> new IllegalArgumentException("올바른 파티가 아닙니다."));
-                targetParty.setCurrentNum(targetParty.getCurrentNum() + 1);
-            }
-
-            Timeslot createdTimeslot = timeslotRepository.save(timeslot);
-            return convertToDTO(createdTimeslot);
+            timeslot.setByteString(dto.getBinaryString());
         }
+
+        // 변경된 타임슬롯 저장
+        timeslotRepository.save(timeslot);
+
+        // userId에 해당하는 모든 타임슬롯을 다시 가져와 변경 후 상태 확인
+        List<Timeslot> userTimeslotsAfter = timeslotRepository.findTimeslotsByUserId((long) dto.getUserId());
+        boolean hasAnyActiveTimeslotAfter = userTimeslotsAfter.stream().anyMatch(ts -> ts.getByteString().contains("1")); // 변경 후 상태 확인
+
+        // current_num 업데이트 로직
+        Party targetParty = date.getParty();
+        if (!hadAnyActiveTimeslot && hasAnyActiveTimeslotAfter) { // 0 -> 1: current_num 증가
+            targetParty.setCurrentNum(targetParty.getCurrentNum() + 1);
+        } else if (hadAnyActiveTimeslot && !hasAnyActiveTimeslotAfter) { // 1 -> 0: current_num 감소
+            targetParty.setCurrentNum(targetParty.getCurrentNum() - 1);
+        }
+        partyRepository.save(targetParty); // 변경된 파티 정보 저장
+
+        return convertToDTO(timeslot);
     }
+
+
+
+
     private void validateByteString(String byteString, Date startTime, Date endTime) {
         Calendar startCal = Calendar.getInstance();
         startCal.setTime(startTime);
@@ -123,7 +127,7 @@ public class TimeslotService {
 
         timeslotRepository.deleteById(id);
         if (timeslotRepository.existsUserInPartyTimeslot(userId, partyId) == false) {
-        //    해당 유저의 투표가 모두 사라진다면 currentNum없애기
+            //    해당 유저의 투표가 모두 사라진다면 currentNum없애기
             Party targetPary = partyRepository.findById(partyId).
                     orElseThrow(() -> new IllegalArgumentException("party is not found."));
             targetPary.setCurrentNum(targetPary.getCurrentNum() - 1);
