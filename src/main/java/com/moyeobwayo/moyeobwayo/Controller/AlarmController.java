@@ -33,9 +33,7 @@ public class AlarmController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateAlarm(@PathVariable("id") Long alarmId,
                                          @RequestBody AlarmUpdateRequest request) {
-        if (!alarmId.equals(request.getId())) {
-            throw new IllegalArgumentException("Path variable ID and request body ID must match.");
-        }
+
         Alarm updatedAlarm = alarmService.updateAlarm(alarmId, request.isAlarmOn());
         return ResponseEntity.ok(updatedAlarm);
     }
