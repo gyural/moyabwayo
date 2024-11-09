@@ -314,13 +314,27 @@ public class KakaoUserService {
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
         RestTemplate restTemplate = new RestTemplate();
 
-        ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, request, Map.class);
-        return response.getBody();  // 전체 응답을 반환하여 필요한 값들을 추출
+        try {
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, request, Map.class);
+            return response.getBody(); // 전체 응답을 반환하여 필요한 값들을 추출
+        } catch (HttpClientErrorException e) {
+            // 만료된 인가 코드에 대한 예외 처리
+            if (e.getStatusCode() == HttpStatus.BAD_REQUEST && e.getResponseBodyAsString().contains("invalid_grant")) {
+                throw new IllegalArgumentException("인가 코드가 만료되었습니다.");
+            }
+            throw e; // 다른 오류는 그대로 던짐
+        }
+
+    //    ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, request, Map.class);
+    //    return response.getBody();  // 전체 응답을 반환하여 필요한 값들을 추출
     }
+
 
     // 액세스 토큰으로 카카오 사용자 프로필 정보 조회
     private KakaoProfile getKakaoUserProfile(String accessToken) {
-        String url = "https://kapi.kakao.com/v2/user/me";
+
+        // 카카오 API의 사용자 정보 조회 엔드포인트 URL
+        String url = "https://kapi.kakao.com/v2/user/me"; // 카카오 서버에 액세스 토큰을 사용하여 사용자 정보를 요청
 
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + accessToken);
@@ -347,10 +361,36 @@ public class KakaoUserService {
             // 예상치 못한 타입일 경우 예외 처리
             throw new IllegalArgumentException("Unexpected ID type: " + body.get("id").getClass());
         }
+
+        // 닉네임과 프로필 이미지 설정
         kakaoProfile.setNickname((String) profile.get("nickname"));
         kakaoProfile.setProfile_image((String) profile.get("profile_image_url"));
 
+        // 전화번호와 국가 코드 설정
+        if (kakaoAccount.containsKey("phone_number")) {
+            String fullPhoneNumber = (String) kakaoAccount.get("phone_number");
+            kakaoProfile.setCountryCode(extractCountryCode(fullPhoneNumber));
+            kakaoProfile.setPhoneNumber(extractPhoneNumber(fullPhoneNumber));
+        }
+
         return kakaoProfile;
+    }
+
+    // 국가 코드 추출 메서드 (getKakaoUserProfile에서 활용)
+    private String extractCountryCode(String fullPhoneNumber) {
+        if (fullPhoneNumber != null && fullPhoneNumber.contains(" ")) {
+            return fullPhoneNumber.split(" ")[0];  // 국가 코드 부분 (예: "+82")
+        }
+        return null;
+    }
+
+    // 전화번호 추출 메서드 (getKakaoUserProfile에서 활용)
+    private String extractPhoneNumber(String fullPhoneNumber) {
+        if (fullPhoneNumber != null && fullPhoneNumber.contains(" ")) {
+            String[] parts = fullPhoneNumber.split(" ");
+            return parts.length > 1 ? parts[1] : null;  // 국가 코드 제외한 전화번호 (예: "10-1234-5678")
+        }
+        return null;
     }
 
     private Long convertToLong(Object value) {
