@@ -26,4 +26,12 @@ public class KakaoProfile {
 
     private Long expires_in;  // 액세스 토큰 만료 시간 (초 단위)
     private Long refresh_token_expires_in;  // 리프레시 토큰 만료 시간 (초 단위)
+
+    // 전화 번호
+    // @Column(length = 255)
+    private String phoneNumber;
+
+    // 국가 코드
+    // @Column(length = 5)
+    private String countryCode;
 }
