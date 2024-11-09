@@ -10,6 +10,12 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
+@Table(
+        name = "user_entity",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"kakao_user_id", "party_id"})
+        }
+)
 public class UserEntity {
 
     @Id
