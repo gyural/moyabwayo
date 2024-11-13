@@ -38,12 +38,18 @@ public class KakaoUserPartyController {
         this.partyService = partyService;
     }
 
+    /**
+     * POST /api/v1/kakaouser/meetlist
+     * 카카오 사용자 id로 파티 조회
+     * @param reqData
+     * @return
+     */
     @PostMapping("/meetlist")
     public ResponseEntity<?> getPartyByKakaoUserId(@RequestBody GetMeetListByKakaoIdRequest reqData) {
         try {
             // 서비스에서 kakao_user_id로 Party 조회
-            Long KakaoUserId = (long) reqData.getKakaoUserId();
-            List<Party> parties = kakaoUserPartyService.getPartyByKakaoUserId(KakaoUserId);
+            Long KakaoUserId = (long) reqData.getKakaoUserId(); // kakaoUserId를 받아옴
+            List<Party> parties = kakaoUserPartyService.getPartyByKakaoUserId(KakaoUserId); // kakaoUserId를 기반으로 파티 조회
             return ResponseEntity.ok(parties);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(e.getMessage());
