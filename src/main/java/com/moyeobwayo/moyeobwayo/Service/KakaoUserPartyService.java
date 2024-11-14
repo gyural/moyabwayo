@@ -4,6 +4,7 @@ import com.moyeobwayo.moyeobwayo.Domain.Party;
 import com.moyeobwayo.moyeobwayo.Domain.UserEntity;
 import com.moyeobwayo.moyeobwayo.Repository.UserEntityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -26,16 +27,15 @@ public class KakaoUserPartyService {
      * @param kakaoUserId
      * @return
      */
-    public List<Party> getPartyByKakaoUserId(Long kakaoUserId) {
+    public List<Party> getPartyByKakaoUserId(Long kakaoUserId, Pageable pageable) {
         // kakao_user_id로 UserEntity 조회
-        List<UserEntity> userEntity = userEntityRepository.findUserEntitiesByKakaoProfile_KakaoUserId(kakaoUserId);
+        List<UserEntity> userEntities = userEntityRepository.findByKakaoProfile_KakaoUserId(kakaoUserId, pageable).getContent();
 
-        if (userEntity.isEmpty()) {
-            return null;
-        }
         List<Party> partyList = new ArrayList<>();
-        for (UserEntity userEntity1 : userEntity) {
-            partyList.add(userEntity1.getParty());
+        for (UserEntity userEntity : userEntities) {
+            if (userEntity.getParty() != null) {
+                partyList.add(userEntity.getParty());
+            }
         }
 
         /*
@@ -47,7 +47,6 @@ public class KakaoUserPartyService {
 
 
         return distinctPartyList;
-        // return partyList;
 
     }
 }

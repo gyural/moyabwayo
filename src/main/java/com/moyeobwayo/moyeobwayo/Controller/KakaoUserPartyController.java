@@ -16,6 +16,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.ErrorResponse;
@@ -48,8 +50,8 @@ public class KakaoUserPartyController {
     public ResponseEntity<?> getPartyByKakaoUserId(@RequestBody GetMeetListByKakaoIdRequest reqData) {
         try {
             // 서비스에서 kakao_user_id로 Party 조회
-            Long KakaoUserId = (long) reqData.getKakaoUserId(); // kakaoUserId를 받아옴
-            List<Party> parties = kakaoUserPartyService.getPartyByKakaoUserId(KakaoUserId); // kakaoUserId를 기반으로 파티 조회
+            Pageable pageable = PageRequest.of(reqData.getPage() - 1, reqData.getSize());
+            List<Party> parties = kakaoUserPartyService.getPartyByKakaoUserId(reqData.getKakaoUserId(), pageable);
             return ResponseEntity.ok(parties);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(e.getMessage());
