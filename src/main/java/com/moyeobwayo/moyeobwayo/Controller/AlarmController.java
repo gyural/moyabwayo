@@ -1,14 +1,12 @@
 package com.moyeobwayo.moyeobwayo.Controller;
 
 import com.moyeobwayo.moyeobwayo.Domain.Alarm;
+import com.moyeobwayo.moyeobwayo.Domain.request.alarm.AlarmUpdateRequest;
 import com.moyeobwayo.moyeobwayo.Service.AlarmService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,5 +29,12 @@ public class AlarmController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateAlarm(@PathVariable("id") Long alarmId,
+                                         @RequestBody AlarmUpdateRequest request) {
+
+        Alarm updatedAlarm = alarmService.updateAlarm(alarmId, request.isAlarmOn());
+        return ResponseEntity.ok(updatedAlarm);
     }
 }
