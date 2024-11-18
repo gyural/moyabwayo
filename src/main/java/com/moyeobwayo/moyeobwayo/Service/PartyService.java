@@ -199,7 +199,7 @@ public class PartyService {
     public ResponseEntity<?> partyCreate(PartyCreateRequest partyCreateRequest){
         try{
             // 필수 값 검증(값이 정상적으로 전달되었는지 검증), partyDescription은 null 혹은 empty로 와도 가능하게 함.
-            if(partyCreateRequest.getParticipants()<=0 ||
+            if(partyCreateRequest.getParticipants()< 0 ||
                     partyCreateRequest.getPartyTitle()==null || partyCreateRequest.getPartyTitle().isEmpty() ||
                     partyCreateRequest.getStartTime()==null || partyCreateRequest.getEndTime()==null ||
                     partyCreateRequest.getDates()==null || partyCreateRequest.getDates().isEmpty()){
