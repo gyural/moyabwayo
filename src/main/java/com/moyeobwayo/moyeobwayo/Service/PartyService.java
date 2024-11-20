@@ -25,6 +25,17 @@ import java.util.*;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+// *****************************
+// 알림톡 관련
+import org.springframework.boot.configurationprocessor.json.JSONArray;
+import org.springframework.boot.configurationprocessor.json.JSONException;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+// *****************************
+
 @Service
 @RequiredArgsConstructor
 public class PartyService {
@@ -36,6 +47,79 @@ public class PartyService {
     private final KakaoUserService kakaoUserService;
     private final AlarmRepository alarmRepository;
     private final DecisionRepository decisionRepository;
+    private final kakaotalkalarmService kakaotalkalarmService;
+
+    // *****************************
+    // 알림톡 관련 (코드 역할 확인)
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    // 알림톡 예약 전송 10분 (테스트 1분)
+    public void scheduleAlimTalk(Party party) {
+        scheduler.schedule(() -> {
+            try {
+                sendAlimTalkToPartyCreator(party);
+            } catch (Exception e) {
+                System.err.println("알림톡 전송 실패: " + e.getMessage());
+            }
+        }, 1, TimeUnit.MINUTES); // 10분 후 실행 (테스트는 1분 후 실행)
+    }
+
+    // 알림톡 전송 및 message_send 업데이트
+    private void sendAlimTalkToPartyCreator(Party party) {
+        // 파티 생성자 조회
+        UserEntity partyCreator = userRepository.findByUserName(party.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("파티 생성자를 찾을 수 없습니다: " + party.getUserId()));
+
+        KakaoProfile kakaoProfile = partyCreator.getKakaoProfile();
+        if (kakaoProfile == null || kakaoProfile.getPhoneNumber() == null) {
+            throw new IllegalArgumentException("파티 생성자의 전화번호를 찾을 수 없습니다.");
+        }
+
+        // 전화번호 가공
+        String phoneNumber = formatPhoneNumber(kakaoProfile.getCountryCode(), kakaoProfile.getPhoneNumber());
+
+        // 메시지 데이터 설정
+        // 메시지 데이터라는게 정확히 뭐길래 필요하지?
+        String templateCode = "moyeobwayobasic"; // 템플릿 코드 (유효한 템플릿 코드가 뭐지?)
+        String content = String.format("파티 '%s'가 성공적으로 생성되었습니다!", party.getPartyName()); // 메시지 내용 (내용 그냥 임의로 넣으면 되나?)
+        JSONArray buttons = new JSONArray(); // 버튼이 뭐지 어떻게 구성해야 하지
+        try {
+            buttons.put(new JSONObject()
+                    .put("type", "WL") // 버튼 타입: 웹 링크
+                    .put("name", "모임 확인하기") // 버튼 이름
+                    .put("linkMobile", "https://example.com/party/" + party.getPartyId()) // 모바일 링크
+                    .put("linkPc", "https://example.com/party/" + party.getPartyId())); // PC 링크
+        } catch (JSONException e) {
+            throw new RuntimeException("버튼 데이터 생성 실패", e);
+        }
+
+        // 알림톡 전송
+        kakaotalkalarmService.sendAlimTalk(phoneNumber, templateCode, content, buttons);
+        // templateCode, content, buttons 이게 뭐지?
+
+        // message_send 업데이트
+        party.setMessageSend(true);
+        partyRepository.save(party);
+    }
+
+    // 전화번호 형식 변환(가공)
+    // db 에 저장된 형태 : '10-1234-5678' -> 변환 : '01012345678'
+    private String formatPhoneNumber(String countryCode, String phoneNumber) {
+        if (countryCode == null || phoneNumber == null) {
+            throw new IllegalArgumentException("전화번호 또는 국가 코드가 null입니다.");
+        }
+        // 하이픈 제거 및 숫자만 추출
+        String formattedNumber = phoneNumber.replaceAll("[^0-9]", "");
+
+        // 전화번호의 첫 자리가 0이 아니면 0 추가
+        if (!formattedNumber.startsWith("0")) {
+            formattedNumber = "0" + formattedNumber;
+        }
+
+        return formattedNumber; // 형식 예) 01012345678
+    }
+
+    // *****************************
 
 
     public void updateAlarmStatus(String partyId, String alarmStatus) {
