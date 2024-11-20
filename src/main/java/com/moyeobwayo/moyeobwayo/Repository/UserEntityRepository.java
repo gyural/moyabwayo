@@ -25,6 +25,10 @@ public interface UserEntityRepository extends JpaRepository<UserEntity, Long> {
     @Query("SELECT u FROM UserEntity u WHERE u.userId = :currentUserId")
     Optional<UserEntity> findByIdAndPartyId(@Param("currentUserId") int currentUserId);
 
+    // 알림톡 관련 : 파티 생성자의 이름 찾아서 전화번호, 국가번호 조회 및 가공
+    @Query("SELECT u FROM UserEntity u WHERE u.userName = :userName")
+    Optional<UserEntity> findByUserName(@Param("userName") String userName);
+
     List<UserEntity> findUserEntitiesByKakaoProfile_KakaoUserId(Long kakaoUserId);
 
     Optional<UserEntity> findByKakaoProfile_KakaoUserId(Long kakaoUserId);

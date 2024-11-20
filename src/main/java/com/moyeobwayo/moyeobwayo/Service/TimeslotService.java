@@ -24,6 +24,10 @@ public class TimeslotService {
     private final UserEntityRepository userEntityRepository;
     private final DateEntityRepsitory dateEntityRepsitory;
     private final PartyRepository partyRepository;
+    // *****************************
+    // 알림톡 관련
+    private final PartyService partyService;
+    // *****************************
 
     // 특정 파티에 속한 타임슬롯 조회
     public List<TimeslotResponseDTO> getTimeslotsByPartyId(String partyId) {
@@ -74,6 +78,14 @@ public class TimeslotService {
         } else if (hadAnyActiveTimeslot && !hasAnyActiveTimeslotAfter) { // 1 -> 0: current_num 감소
             targetParty.setCurrentNum(targetParty.getCurrentNum() - 1);
         }
+
+        // *****************************
+        // 알림톡 관련 : current_num과 target_num 비교 및 알림톡 예약
+        if (targetParty.getCurrentNum() == targetParty.getTargetNum() && !targetParty.isMessageSend()) {
+            partyService.scheduleAlimTalk(targetParty);
+        }
+        // *****************************
+
         partyRepository.save(targetParty); // 변경된 파티 정보 저장
 
         return convertToDTO(timeslot);
