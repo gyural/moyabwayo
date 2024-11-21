@@ -27,9 +27,10 @@ import java.util.stream.Collectors;
 
 // *****************************
 // 알림톡 관련
-import org.springframework.boot.configurationprocessor.json.JSONArray;
-import org.springframework.boot.configurationprocessor.json.JSONException;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
+//import org.springframework.boot.configurationprocessor.json.JSONArray;
+//import org.springframework.boot.configurationprocessor.json.JSONException;
+//import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.springframework.transaction.annotation.Transactional; // lazy 로딩 문제 해결용
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -50,7 +51,7 @@ public class PartyService {
     private final kakaotalkalarmService kakaotalkalarmService;
 
     // *****************************
-    // 알림톡 관련 (코드 역할 확인)
+    // 알림톡 관련
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // 알림톡 예약 전송 10분 (테스트 1분)
@@ -64,8 +65,10 @@ public class PartyService {
         }, 1, TimeUnit.MINUTES); // 10분 후 실행 (테스트는 1분 후 실행)
     }
 
+    // Lazy Loading 해결을 위해 @Transactional 어노테이션 추가 & 메서드 public으로 변경
     // 알림톡 전송 및 message_send 업데이트
-    private void sendAlimTalkToPartyCreator(Party party) {
+    @Transactional
+    public void sendAlimTalkToPartyCreator(Party party) {
         // 파티 생성자 조회
         UserEntity partyCreator = userRepository.findByUserName(party.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("파티 생성자를 찾을 수 없습니다: " + party.getUserId()));
@@ -93,9 +96,21 @@ public class PartyService {
 //            throw new RuntimeException("버튼 데이터 생성 실패", e);
 //        }
 
-        List<String> topTimeSlots = List.of("시간대 1", "시간대 2", "시간대 3");
+        // 1. 모든 가능한 시간대 가져오기
+        List<AvailableTime> availableTimes = findAvailableTimesForParty(party);
 
-        // 알림톡 전송
+        // 2. 상위 3개 시간대 추출
+        List<String> topTimeSlots = availableTimes.stream()
+                .limit(3) // 상위 3개만 선택 (limit(n) : 리스트에 요소가 n개보다 적다면 남은 요소를 그대로 반환)
+                .map(availableTime -> String.format("%s - %s",
+                        availableTime.getStart().toString(),
+                        availableTime.getEnd().toString())) // 시간대 이름 생성
+                .collect(Collectors.toList());
+
+        // 시간대 전송 테스트용 더미데이터 리스트
+        // List<String> topTimeSlots = List.of("시간대 1", "시간대 2", "시간대 3");
+
+        // 3. 알림톡 전송
         try {
             kakaotalkalarmService.sendVotingCompletionAlimTalk(party, topTimeSlots, phoneNumber);
             // party : 현재 파티 객체
