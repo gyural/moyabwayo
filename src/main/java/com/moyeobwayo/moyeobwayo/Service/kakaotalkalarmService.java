@@ -160,7 +160,8 @@ public class kakaotalkalarmService {
         buttons.put(button);
 
         // 알림 메시지 템플릿 코드 설정
-        String templateCode = "moyeobwayobasic";  // Naver Cloud Platform SENS에서 설정한 템플릿 코드
+        // templateCode : moyeobwayobasic -> moyeobwayobasic1 변경
+        String templateCode = "moyeobwayobasic1";  // Naver Cloud Platform SENS에서 설정한 템플릿 코드
 
         // 메시지 전송
         sendAlimTalk(
