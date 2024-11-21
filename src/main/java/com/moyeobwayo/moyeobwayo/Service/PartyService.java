@@ -65,10 +65,8 @@ public class PartyService {
         }, 1, TimeUnit.MINUTES); // 10분 후 실행 (테스트는 1분 후 실행)
     }
 
-    // Lazy Loading 해결을 위해 @Transactional 어노테이션 추가 & 메서드 public으로 변경
     // 알림톡 전송 및 message_send 업데이트
-    @Transactional
-    public void sendAlimTalkToPartyCreator(Party party) {
+    private void sendAlimTalkToPartyCreator(Party party) {
         // 파티 생성자 조회
         UserEntity partyCreator = userRepository.findByUserName(party.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("파티 생성자를 찾을 수 없습니다: " + party.getUserId()));
