@@ -120,8 +120,8 @@ public class kakaotalkalarmService {
 
     public void sendVotingCompletionAlimTalk(Party party, List<String> topTimeSlots, String to) throws JSONException {
         // 파티 정보 가져오기
-        String partyName = party.getPartyName(); // 모임 이름
-        String partyLeaderName = party.getUserId(); // 파티장의 이름 가져오기
+        String partyName = party.getPartyName(); // 모임 이름 <= 파티id 하고
+        String partyLeaderName = party.getUserId(); // 파티장의 이름 가져오기 <= 파티 생성자 이름
 
         // 상위 3개의 시간대를 가져옵니다. (topTimeSlots 리스트에 시간대가 들어있음)
         String topTimeSlot1 = topTimeSlots.size() > 0 ? topTimeSlots.get(0) : "시간대 없음";
