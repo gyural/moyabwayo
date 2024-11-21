@@ -78,24 +78,34 @@ public class PartyService {
         // 전화번호 가공
         String phoneNumber = formatPhoneNumber(kakaoProfile.getCountryCode(), kakaoProfile.getPhoneNumber());
 
-        // 메시지 데이터 설정
-        // 메시지 데이터라는게 정확히 뭐길래 필요하지?
-        String templateCode = "moyeobwayobasic"; // 템플릿 코드 (유효한 템플릿 코드가 뭐지?)
-        String content = String.format("파티 '%s'가 성공적으로 생성되었습니다!", party.getPartyName()); // 메시지 내용 (내용 그냥 임의로 넣으면 되나?)
-        JSONArray buttons = new JSONArray(); // 버튼이 뭐지 어떻게 구성해야 하지
-        try {
-            buttons.put(new JSONObject()
-                    .put("type", "WL") // 버튼 타입: 웹 링크
-                    .put("name", "모임 확인하기") // 버튼 이름
-                    .put("linkMobile", "https://example.com/party/" + party.getPartyId()) // 모바일 링크
-                    .put("linkPc", "https://example.com/party/" + party.getPartyId())); // PC 링크
-        } catch (JSONException e) {
-            throw new RuntimeException("버튼 데이터 생성 실패", e);
-        }
+//        // 메시지 데이터 설정
+//        // 메시지 데이터라는게 정확히 뭐길래 필요하지?
+//        String templateCode = "moyeobwayobasic"; // 템플릿 코드 (유효한 템플릿 코드가 뭐지?)
+//        String content = String.format("파티 '%s'가 성공적으로 생성되었습니다!", party.getPartyName()); // 메시지 내용 (내용 그냥 임의로 넣으면 되나?)
+//        JSONArray buttons = new JSONArray(); // 버튼이 뭐지 어떻게 구성해야 하지
+//        try {
+//            buttons.put(new JSONObject()
+//                    .put("type", "WL") // 버튼 타입: 웹 링크
+//                    .put("name", "모임 확인하기") // 버튼 이름
+//                    .put("linkMobile", "https://example.com/party/" + party.getPartyId()) // 모바일 링크
+//                    .put("linkPc", "https://example.com/party/" + party.getPartyId())); // PC 링크
+//        } catch (JSONException e) {
+//            throw new RuntimeException("버튼 데이터 생성 실패", e);
+//        }
+
+        List<String> topTimeSlots = List.of("시간대 1", "시간대 2", "시간대 3");
 
         // 알림톡 전송
-        kakaotalkalarmService.sendAlimTalk(phoneNumber, templateCode, content, buttons);
-        // templateCode, content, buttons 이게 뭐지?
+        try {
+            kakaotalkalarmService.sendVotingCompletionAlimTalk(party, topTimeSlots, phoneNumber);
+            // party : 현재 파티 객체
+            // topTimeSlots : 시간대 3개 슬라이싱해서 배열로 넘기기 (findAvailableTimesForParty 함수 호출 후 시간대 리스트 받아와서 진행)
+            // -> 일단 빈배열 더미데이터로 진행
+            // phoneNumber : 파티 생성자의 전화번호
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
 
         // message_send 업데이트
         party.setMessageSend(true);
