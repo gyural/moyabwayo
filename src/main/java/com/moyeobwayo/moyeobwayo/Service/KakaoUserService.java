@@ -410,21 +410,24 @@ public class KakaoUserService {
         if (userOptional.isEmpty()) return false;
 
         // 이미 연결된 계정 막기-------------------
-        UserEntity alreadyuserEntity = userOptional.get();
+        UserEntity userEntity  = userOptional.get();
 
         // 이미 연결된 경우 아무 작업도 하지 않고 true 반환
-        if (alreadyuserEntity.getKakaoProfile() != null) {
+        if (userEntity.getKakaoProfile() != null) {
             return true;  // 이미 연결된 경우에도 성공적으로 처리한 것으로 간주
         }
 
         Optional<KakaoProfile> kakaoProfileOptional = kakaoProfileRepository.findById(kakaoUserId);
         if (kakaoProfileOptional.isEmpty()) return false;
 
-        UserEntity userEntity = userOptional.get();
         KakaoProfile kakaoProfile = kakaoProfileOptional.get();
 
         // 카카오 프로필과 유저 연결
         userEntity.setKakaoProfile(kakaoProfile);
+
+        // 사용자 이름 업데이트
+        String updatedUserName = kakaoProfile.getNickname() + "(" + kakaoUserId + ")";
+        userEntity.setUserName(updatedUserName);
         userEntityRepository.save(userEntity);  // 유저 저장
 
         // ✨ 알람 생성 추가
