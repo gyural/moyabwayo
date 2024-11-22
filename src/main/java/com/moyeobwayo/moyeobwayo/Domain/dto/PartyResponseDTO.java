@@ -8,10 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -28,8 +25,8 @@ public class PartyResponseDTO {
         // Set을 List로 변환 및 정렬
         // 기존 코드: this.party.getDates().sort(Comparator.comparing(DateEntity::getSelected_date));
         List<DateEntity> sortedDates = new ArrayList<>(this.party.getDates()); // Set -> List 변환
-        sortedDates.sort(Comparator.comparing(DateEntity::getSelected_date)); // 정렬 수행
-        this.party.setDates(new HashSet<>(sortedDates)); // 정렬된 데이터를 다시 Set으로 저장 (필요한 경우)
+        sortedDates.sort(Comparator.comparing(DateEntity::getDateId)); // 정렬 수행
+        this.party.setDates(new LinkedHashSet<>(sortedDates));
 
         // Timeslot 정보를 원하는 형식으로 변환하여 날짜별로 저장
         sortedDates.forEach(date -> { // 기존 코드: this.party.getDates().forEach(date -> {

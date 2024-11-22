@@ -59,17 +59,6 @@ public class PartyController {
         return partyService.partyCreate(partyCreateRequest);
     }
 
-    /**
-     * 지정된 파티의 가능 여부 높은 시간 출력
-     * GET api/v1/party/{id}
-     * @param id
-     * @return
-     */
-//    @GetMapping("/{id}")
-//    public ResponseEntity<?> getParty(@PathVariable int id) {
-//        List<AvailableTime> availableTimes = partyService.findAvailableTimesForParty(id);
-//        return ResponseEntity.ok(availableTimes);
-//    }
     @GetMapping("/{id}")
     public ResponseEntity<PartyResponseDTO> getParty(@PathVariable("id") String id) {
         PartyResponseDTO partyResponseDTO = new PartyResponseDTO();

@@ -423,7 +423,11 @@ public class PartyService {
                 LocalDateTime startTime = dateStart.withHour(partyStartTime.getHour()).withMinute(partyStartTime.getMinute());
                 LocalDateTime endTime = dateStart.withHour(partyEndTime.getHour()).withMinute(partyEndTime.getMinute());
 
-                // 24.11.22) **변경된 부분: Set을 List로 변환**
+                // 종료 시간이 00:00인지 확인하고 하루를 추가
+                if (endTime.getHour() == 0 && endTime.getMinute() == 0) {
+                    endTime = endTime.plusDays(1);
+                }
+
                 List<Timeslot> slots = new ArrayList<>(date.getTimeslots()); // Set -> List 변환
                 // 24.11.22) Optional: 정렬이 필요한 경우 (slotId 기준으로 정렬)
                 slots.sort(Comparator.comparing(Timeslot::getSlotId));
