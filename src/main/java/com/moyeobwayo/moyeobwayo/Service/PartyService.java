@@ -8,6 +8,7 @@ import com.moyeobwayo.moyeobwayo.Domain.response.PartyCompleteResponse;
 import com.moyeobwayo.moyeobwayo.Repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.LazyInitializationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.moyeobwayo.moyeobwayo.Domain.dto.AvailableTime;
@@ -62,67 +63,72 @@ public class PartyService {
             } catch (Exception e) {
                 System.err.println("알림톡 전송 실패: " + e.getMessage());
             }
-        }, 1, TimeUnit.MINUTES); // 10분 후 실행 (테스트는 1분 후 실행)
+        }, 3, TimeUnit.SECONDS);
+        //}, 10, TimeUnit.MINUTES); // 10분 후 실행 (테스트는 3초 후 실행)
     }
 
     // 알림톡 전송 및 message_send 업데이트
-    private void sendAlimTalkToPartyCreator(Party party) {
-        // 파티 생성자 조회
-        UserEntity partyCreator = userRepository.findByUserName(party.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("파티 생성자를 찾을 수 없습니다: " + party.getUserId()));
+    public void sendAlimTalkToPartyCreator(Party party) {
 
-        KakaoProfile kakaoProfile = partyCreator.getKakaoProfile();
-        if (kakaoProfile == null || kakaoProfile.getPhoneNumber() == null) {
-            throw new IllegalArgumentException("파티 생성자의 전화번호를 찾을 수 없습니다.");
-        }
-
-        // 전화번호 가공
-        String phoneNumber = formatPhoneNumber(kakaoProfile.getCountryCode(), kakaoProfile.getPhoneNumber());
-
-//        // 메시지 데이터 설정
-//        // 메시지 데이터라는게 정확히 뭐길래 필요하지?
-//        String templateCode = "moyeobwayobasic"; // 템플릿 코드 (유효한 템플릿 코드가 뭐지?)
-//        String content = String.format("파티 '%s'가 성공적으로 생성되었습니다!", party.getPartyName()); // 메시지 내용 (내용 그냥 임의로 넣으면 되나?)
-//        JSONArray buttons = new JSONArray(); // 버튼이 뭐지 어떻게 구성해야 하지
-//        try {
-//            buttons.put(new JSONObject()
-//                    .put("type", "WL") // 버튼 타입: 웹 링크
-//                    .put("name", "모임 확인하기") // 버튼 이름
-//                    .put("linkMobile", "https://example.com/party/" + party.getPartyId()) // 모바일 링크
-//                    .put("linkPc", "https://example.com/party/" + party.getPartyId())); // PC 링크
-//        } catch (JSONException e) {
-//            throw new RuntimeException("버튼 데이터 생성 실패", e);
-//        }
-
-        // 1. 모든 가능한 시간대 가져오기
-        List<AvailableTime> availableTimes = findAvailableTimesForParty(party);
-
-        // 2. 상위 3개 시간대 추출
-        List<String> topTimeSlots = availableTimes.stream()
-                .limit(3) // 상위 3개만 선택 (limit(n) : 리스트에 요소가 n개보다 적다면 남은 요소를 그대로 반환)
-                .map(availableTime -> String.format("%s - %s",
-                        availableTime.getStart().toString(),
-                        availableTime.getEnd().toString())) // 시간대 이름 생성
-                .collect(Collectors.toList());
-
-        // 시간대 전송 테스트용 더미데이터 리스트
-        // List<String> topTimeSlots = List.of("시간대 1", "시간대 2", "시간대 3");
-
-        // 3. 알림톡 전송
         try {
-            kakaotalkalarmService.sendVotingCompletionAlimTalk(party, topTimeSlots, phoneNumber);
-            // party : 현재 파티 객체
-            // topTimeSlots : 시간대 3개 슬라이싱해서 배열로 넘기기 (findAvailableTimesForParty 함수 호출 후 시간대 리스트 받아와서 진행)
-            // -> 일단 빈배열 더미데이터로 진행
-            // phoneNumber : 파티 생성자의 전화번호
+            // 파티 생성자 조회
+            UserEntity partyCreator = userRepository.findByUserName(party.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("파티 생성자를 찾을 수 없습니다: " + party.getUserId()));
 
+            KakaoProfile kakaoProfile = partyCreator.getKakaoProfile();
+            if (kakaoProfile == null || kakaoProfile.getPhoneNumber() == null) {
+                throw new IllegalArgumentException("파티 생성자의 전화번호를 찾을 수 없습니다.");
+            }
+
+            // 전화번호 가공
+            String phoneNumber = formatPhoneNumber(kakaoProfile.getCountryCode(), kakaoProfile.getPhoneNumber());
+
+            // 파티 이름 및 생성자 이름 정의
+            String partyName = party.getPartyName();       // 파티 이름
+            String partyLeaderName = party.getUserId();    // 파티 생성자 이름
+
+
+//            // 1. 모든 가능한 시간대 가져오기
+//            List<AvailableTime> availableTimes = findAvailableTimesForParty(party);
+//
+//            // 2. 상위 3개 시간대 추출
+//            List<String> topTimeSlots = availableTimes.stream()
+//                    .limit(3) // 상위 3개만 선택 (limit(n) : 리스트에 요소가 n개보다 적다면 남은 요소를 그대로 반환)
+//                    .map(availableTime -> String.format("%s - %s",
+//                            availableTime.getStart().toString(),
+//                            availableTime.getEnd().toString())) // 시간대 이름 생성
+//                    .collect(Collectors.toList());
+
+            // 시간대 전송 테스트용 더미데이터 리스트
+             List<String> topTimeSlots = List.of("시간대 1", "시간대 2", "시간대 3");
+
+            // 3. 알림톡 전송
+            try {
+                kakaotalkalarmService.sendVotingCompletionAlimTalk(partyName, partyLeaderName, topTimeSlots, phoneNumber);
+                // party : 현재 파티 객체
+                // topTimeSlots : 시간대 3개 슬라이싱해서 배열로 넘기기 (findAvailableTimesForParty 함수 호출 후 시간대 리스트 받아와서 진행)
+                // -> 일단 빈배열 더미데이터로 진행
+                // phoneNumber : 파티 생성자의 전화번호
+
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+
+            // message_send 업데이트
+            party.setMessageSend(true);
+            partyRepository.save(party);
+
+        } catch (LazyInitializationException e) {
+            System.out.println("LazyInitializationException 발생!");
+            System.out.println("Party ID: " + party.getPartyId());
+            System.out.println("예외 메시지: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // 예외를 다시 던져 호출자에게 전달
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("sendAlimTalkToPartyCreator 메서드 실행 중 예외 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // 다른 예외도 호출자에게 전달
         }
-
-        // message_send 업데이트
-        party.setMessageSend(true);
-        partyRepository.save(party);
     }
 
     // 전화번호 형식 변환(가공)
@@ -366,77 +372,86 @@ public class PartyService {
      * @return List<AvailableTime>
      */
     public List<AvailableTime> findAvailableTimesForParty(Party party) {  // !!!!!!!!!!! 수정
-        // 1. Party 객체 찾기
-        //Party party = partyStringIdRepository.findById(partyId)  // !!!!!!!!!!! 수정
-        //        .orElseThrow(() -> new IllegalArgumentException("Party not found"));
-        ZoneId zoneId = ZoneId.systemDefault();
-        LocalDateTime partyStartTime = LocalDateTime.ofInstant(party.getStartDate().toInstant(), ZoneId.systemDefault());
-        LocalDateTime partyEndTime = LocalDateTime.ofInstant(party.getEndDate().toInstant(), ZoneId.systemDefault());
-        // 2. Party와 연결된 모든 DateEntity의 Timeslot 가져오기
+        try {
+            // 1. Party 객체 찾기
+            // Party party = partyStringIdRepository.findById(partyId)  // !!!!!!!!!!! 수정
+            //        .orElseThrow(() -> new IllegalArgumentException("Party not found"));
+            ZoneId zoneId = ZoneId.systemDefault();
+            LocalDateTime partyStartTime = LocalDateTime.ofInstant(party.getStartDate().toInstant(), ZoneId.systemDefault());
+            LocalDateTime partyEndTime = LocalDateTime.ofInstant(party.getEndDate().toInstant(), ZoneId.systemDefault());
+            // 2. Party와 연결된 모든 DateEntity의 Timeslot 가져오기
 
-        List<TimeSlot> timeSlots = new ArrayList<>();
-        for (DateEntity date : party.getDates()) {
-            // date에서 날짜를 가져오고, party에서 시작 및 종료 시간을 가져옴
-            LocalDateTime dateStart = LocalDateTime.ofInstant(date.getSelected_date().toInstant(), zoneId);
+            List<TimeSlot> timeSlots = new ArrayList<>();
 
-            // party의 날짜와 시간 합치기
-            LocalDateTime startTime = dateStart.withHour(partyStartTime.getHour()).withMinute(partyStartTime.getMinute());
-            LocalDateTime endTime = dateStart.withHour(partyEndTime.getHour()).withMinute(partyEndTime.getMinute());
+            for (DateEntity date : party.getDates()) {
+                // date에서 날짜를 가져오고, party에서 시작 및 종료 시간을 가져옴
+                LocalDateTime dateStart = LocalDateTime.ofInstant(date.getSelected_date().toInstant(), zoneId);
 
-            List<Timeslot> slots = date.getTimeslots();
+                // party의 날짜와 시간 합치기
+                LocalDateTime startTime = dateStart.withHour(partyStartTime.getHour()).withMinute(partyStartTime.getMinute());
+                LocalDateTime endTime = dateStart.withHour(partyEndTime.getHour()).withMinute(partyEndTime.getMinute());
 
-            for (Timeslot slot : slots) {
-                // 비트스트링을 통해 30분 단위로 시간 계산
-                String byteString = slot.getByteString();
-                int intervalMinutes = 30;
+                List<Timeslot> slots = date.getTimeslots();
 
-                LocalDateTime currentSlotStart = startTime;
-                boolean inAvailableRange = false;
-                LocalDateTime rangeStart = null;
+                for (Timeslot slot : slots) {
+                    // 비트스트링을 통해 30분 단위로 시간 계산
+                    String byteString = slot.getByteString();
+                    int intervalMinutes = 30;
 
-                for (int i = 0; i < byteString.length(); i++) {
-                    LocalDateTime currentTimePoint = currentSlotStart.plusMinutes(i * intervalMinutes);
+                    LocalDateTime currentSlotStart = startTime;
+                    boolean inAvailableRange = false;
+                    LocalDateTime rangeStart = null;
 
-                    // 현재 date와 파티의 시작/종료 시간 사이에서 유효한 범위 체크
-                    if (currentTimePoint.isBefore(dateStart) || currentTimePoint.isAfter(endTime)) {
-                        continue;
+                    for (int i = 0; i < byteString.length(); i++) {
+                        LocalDateTime currentTimePoint = currentSlotStart.plusMinutes(i * intervalMinutes);
+
+                        // 현재 date와 파티의 시작/종료 시간 사이에서 유효한 범위 체크
+                        if (currentTimePoint.isBefore(dateStart) || currentTimePoint.isAfter(endTime)) {
+                            continue;
+                        }
+
+                        // 비트가 '1'일 때 사용 가능 시간으로 처리
+                        if (byteString.charAt(i) == '1') {
+                            if (!inAvailableRange) {
+                                rangeStart = currentTimePoint;
+                                inAvailableRange = true;
+                            }
+                        } else {
+                            // 비트가 '0'이면 현재 범위가 끝났음을 기록하고 추가
+                            if (inAvailableRange) {
+                                timeSlots.add(new TimeSlot(
+                                        slot.getUserEntity().getUserId(),          // userId 설정
+                                        slot.getUserEntity().getUserName(),        // userName 설정
+                                        rangeStart,
+                                        currentTimePoint  // 종료 시간은 현재 30분 후
+                                ));
+
+                                inAvailableRange = false;
+                            }
+                        }
                     }
 
-                    // 비트가 '1'일 때 사용 가능 시간으로 처리
-                    if (byteString.charAt(i) == '1') {
-                        if (!inAvailableRange) {
-                            rangeStart = currentTimePoint;
-                            inAvailableRange = true;
-                        }
-                    } else {
-                        // 비트가 '0'이면 현재 범위가 끝났음을 기록하고 추가
-                        if (inAvailableRange) {
-                            timeSlots.add(new TimeSlot(
-                                    slot.getUserEntity().getUserId(),          // userId 설정
-                                    slot.getUserEntity().getUserName(),        // userName 설정
-                                    rangeStart,
-                                    currentTimePoint  // 종료 시간은 현재 30분 후
-                            ));
-
-                            inAvailableRange = false;
-                        }
+                    // 만약 마지막 구간이 1로 끝났다면 종료 시간까지의 구간 추가
+                    if (inAvailableRange) {
+                        timeSlots.add(new TimeSlot(
+                                slot.getUserEntity().getUserId(),       // userId 설정
+                                slot.getUserEntity().getUserName(),     // userName 설정
+                                rangeStart,
+                                endTime  // 마지막 종료 시간을 파티 종료 시간으로 설정
+                        ));
                     }
-                }
-
-                // 만약 마지막 구간이 1로 끝났다면 종료 시간까지의 구간 추가
-                if (inAvailableRange) {
-                    timeSlots.add(new TimeSlot(
-                            slot.getUserEntity().getUserId(),       // userId 설정
-                            slot.getUserEntity().getUserName(),     // userName 설정
-                            rangeStart,
-                            endTime  // 마지막 종료 시간을 파티 종료 시간으로 설정
-                    ));
                 }
             }
-        }
 
-        // 3. 가능한 시간대 찾기
-        return findAvailableTimes(timeSlots);
+            // 3. 가능한 시간대 찾기
+            return findAvailableTimes(timeSlots);
+        } catch (LazyInitializationException e) {
+            // Lazy Loading 예외 발생 시 로그 출력
+            System.err.println("LazyInitializationException 발생!");
+            System.err.println("예외 메시지: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // 예외를 다시 던져 호출자에게 전달
+        }
     }
 
 
