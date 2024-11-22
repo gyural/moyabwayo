@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
 
 import java.awt.print.PrinterJob;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Entity
@@ -16,9 +17,8 @@ import java.util.*;
 public class Party {
 
     @Id
-    private String partyId = UUID.randomUUID().toString();  // UUID를 기본 값으로 설정
-    // @GeneratedValue(strategy = GenerationType.IDENTITY)
-    // private int party_id;
+    // private String partyId = UUID.randomUUID().toString();  // UUID를 기본 값으로 설정
+    private String partyId = generatePartyId();
 
     private int targetNum;
     private int currentNum;
@@ -51,5 +51,12 @@ public class Party {
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
+    }
+
+    private String generatePartyId() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+        String currentDateTime = dateFormat.format(new Date()); // 현재 날짜 및 시간
+        String uuid = UUID.randomUUID().toString(); // UUID 생성
+        return currentDateTime + uuid; // 날짜-시간 + UUID 조합
     }
 }
