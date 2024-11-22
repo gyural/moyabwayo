@@ -30,8 +30,16 @@ public class KakaoUserPartyService {
         List<Party> partyList = new ArrayList<>();
         for (UserEntity userEntity1 : userEntity) {
             partyList.add(userEntity1.getParty());
-
         }
+
+        partyList.sort((p1, p2) -> {
+            // partyId에서 숫자 부분 추출
+            Long datePart1 = Long.parseLong(p1.getPartyId().substring(0, 14));
+            Long datePart2 = Long.parseLong(p2.getPartyId().substring(0, 14));
+            // return datePart2.compareTo(datePart1); // ->최신
+            return datePart1.compareTo(datePart2); // 최신->
+        });
+
         return partyList;
 
     }
