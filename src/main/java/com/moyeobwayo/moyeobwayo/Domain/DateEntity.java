@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.util.List;
+import java.util.Set;
 import java.util.TimeZone;
 
 @Entity
@@ -26,7 +27,8 @@ public class DateEntity {
 
     // @OneToMany(mappedBy = "date")
     @OneToMany(mappedBy = "date", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Timeslot> timeslots;
+    // private List<Timeslot> timeslots;
+    private Set<Timeslot> timeslots; // 24.11.22) 변경: List -> Set : 기능 문제시 삭제 후 위 코드 사용
 
     // !!!!!!!!!!!!!!!!!!!!! 추가됨 !!!!!!!!!!!!!!!!!!!!!!!
     @Transient
