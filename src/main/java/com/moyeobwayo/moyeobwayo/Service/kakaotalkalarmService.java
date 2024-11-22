@@ -2,7 +2,10 @@ package com.moyeobwayo.moyeobwayo.Service;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -118,17 +121,24 @@ public class kakaotalkalarmService {
         }
     }
 
-    // party 객체로 받아서 사용하던 파티 id와 파티 생성자 이름을 string으로 받아서 넘겨준다.
-    public void sendVotingCompletionAlimTalk(String partyName, String partyLeaderName, List<String> topTimeSlots, String to) throws JSONException {
+    public void sendVotingCompletionAlimTalk(
+            String partyId,
+            String partyName,
+            String partyLeaderName,
+            List<String> topTimeSlots,
+            String to) throws JSONException {
 
-        // 상위 3개의 시간대를 가져옵니다. (topTimeSlots 리스트에 시간대가 들어있음)
-        String topTimeSlot1 = topTimeSlots.size() > 0 ? topTimeSlots.get(0) : "시간대 없음";
-        String topTimeSlot2 = topTimeSlots.size() > 1 ? topTimeSlots.get(1) : "시간대 없음";
-        String topTimeSlot3 = topTimeSlots.size() > 2 ? topTimeSlots.get(2) : "시간대 없음";
+        partyLeaderName = partyLeaderName.contains("(")
+                ? partyLeaderName.substring(0, partyLeaderName.indexOf("(")).trim()
+                : partyLeaderName;
 
-        // 메시지 내용 생성
+        String topTimeSlot1 = topTimeSlots.size() > 0 ? formatTimeSlot(topTimeSlots.get(0)) : "시간대 없음";
+        String topTimeSlot2 = topTimeSlots.size() > 1 ? formatTimeSlot(topTimeSlots.get(1)) : "시간대 없음";
+        String topTimeSlot3 = topTimeSlots.size() > 2
+                ? formatTimeSlot(topTimeSlots.get(2)) + "\nhttps://www.moyeobwayo.com/" + partyId
+                : "시간대 없음\nhttps://www.moyeobwayo.com/" + partyId;
+
         String content = String.format(
-                "✨ [투표 완료 알림] ✨\n" +
                         "✨ [투표 완료 알림] ✨\n" +
                         "%s 모임의 투표가 완료되었습니다! 🎉\n" +
                         "\n" +
@@ -158,8 +168,7 @@ public class kakaotalkalarmService {
         buttons.put(button);
 
         // 알림 메시지 템플릿 코드 설정
-        // templateCode : moyeobwayobasic -> moyeobwayobasic1 변경
-        String templateCode = "moyeobwayobasic1";  // Naver Cloud Platform SENS에서 설정한 템플릿 코드
+        String templateCode = "moyeobwayobasic1";
 
         // 메시지 전송
         sendAlimTalk(
@@ -170,6 +179,26 @@ public class kakaotalkalarmService {
         );
     }
 
+    private static String formatTimeSlot(String timeslot) {
+        // Split the timeslot into start and end times
+        String[] parts = timeslot.split(" - ");
+        if (parts.length != 2) {
+            return "Invalid timeslot format";
+        }
+
+        // Parse the start and end times
+        LocalDateTime startTime = LocalDateTime.parse(parts[0]);
+        LocalDateTime endTime = LocalDateTime.parse(parts[1]);
+
+        // Formatters for start time and end time
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일 (E)", Locale.KOREAN);
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+
+        // Construct the formatted string
+        return startTime.format(dateFormatter) + " "
+                + startTime.format(timeFormatter) + " ~ "
+                + endTime.format(timeFormatter);
+    }
 
     public String[] makePostSignature(String accessKey, String secretKey, String url) {
         String[] result = new String[2];

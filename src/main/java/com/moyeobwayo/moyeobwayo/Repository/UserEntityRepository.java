@@ -29,6 +29,8 @@ public interface UserEntityRepository extends JpaRepository<UserEntity, Long> {
     @Query("SELECT u FROM UserEntity u WHERE u.userName = :userName")
     Optional<UserEntity> findByUserName(@Param("userName") String userName);
 
+    Optional<UserEntity> findByUserNameAndParty_PartyId(String userName, String partyId);
+
     List<UserEntity> findUserEntitiesByKakaoProfile_KakaoUserId(Long kakaoUserId);
 
     Optional<UserEntity> findByKakaoProfile_KakaoUserId(Long kakaoUserId);

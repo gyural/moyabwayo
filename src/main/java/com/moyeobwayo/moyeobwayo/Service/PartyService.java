@@ -69,7 +69,7 @@ public class PartyService {
             } catch (Exception e) {
                 System.err.println("알림톡 전송 실패: " + e.getMessage());
             }
-        }, 3, TimeUnit.SECONDS); // 테스트 (3초 후 실행)
+        }, 10 * 60, TimeUnit.SECONDS);
         //}, 10, TimeUnit.MINUTES); // 10분 후 실행
     }
 
@@ -79,7 +79,6 @@ public class PartyService {
     public void sendAlimTalkToPartyCreator(String partyId) {
 
         try {
-
             // Party 및 UserEntity 로드 (파티 생성자 조회)
             Party party = partyRepository.findByIdWithDatesAndTimeslots(partyId)
                     .orElseThrow(() -> new IllegalArgumentException("Party not found with ID: " + partyId));
@@ -90,7 +89,7 @@ public class PartyService {
                 throw new IllegalArgumentException("No dates found for party: " + partyId);
             }
 
-            UserEntity partyCreator = userRepository.findByUserName(party.getUserId())
+            UserEntity partyCreator = userRepository.findByUserNameAndParty_PartyId(party.getUserId(), partyId)
                     .orElseThrow(() -> new IllegalArgumentException("파티 생성자를 찾을 수 없습니다: " + party.getUserId()));
 
 
@@ -125,6 +124,7 @@ public class PartyService {
             // 3. 알림톡 전송
             try {
                 kakaotalkalarmService.sendVotingCompletionAlimTalk(
+                        party.getPartyId(),
                         party.getPartyName(),
                         party.getUserId(),
                         topTimeSlots,
