@@ -8,10 +8,7 @@ import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
 
 import java.awt.print.PrinterJob;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Getter
@@ -47,7 +44,8 @@ public class Party {
     // @OneToMany(mappedBy = "party")
     // ----------------Lazy Loading의 원흉----------------
     @OneToMany(mappedBy = "party", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<DateEntity> dates;
+    // private List<DateEntity> dates;
+    private Set<DateEntity> dates; // 24.11.22) 변경: List -> Set : 기능 문제시 삭제 후 위 코드 사용
     // --------------------------------------------------
 
     @PostConstruct

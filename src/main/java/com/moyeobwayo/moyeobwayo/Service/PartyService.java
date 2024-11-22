@@ -5,6 +5,7 @@ import com.moyeobwayo.moyeobwayo.Domain.dto.TimeSlot;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCompleteRequest;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCreateRequest;
 import com.moyeobwayo.moyeobwayo.Domain.response.PartyCompleteResponse;
+import com.moyeobwayo.moyeobwayo.Domain.dto.PartyDTO;
 import com.moyeobwayo.moyeobwayo.Repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -53,28 +54,47 @@ public class PartyService {
 
     // *****************************
     // 알림톡 관련
+
+    // 스케줄러 초기화
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    // 알림톡 예약 전송 10분 (테스트 1분)
+
+    /**
+     * 알림톡 예약 전송 10분 (테스트 3초)
+     */
     public void scheduleAlimTalk(Party party) {
         scheduler.schedule(() -> {
             try {
-                sendAlimTalkToPartyCreator(party);
+                sendAlimTalkToPartyCreator(party.getPartyId());
             } catch (Exception e) {
                 System.err.println("알림톡 전송 실패: " + e.getMessage());
             }
-        }, 3, TimeUnit.SECONDS);
-        //}, 10, TimeUnit.MINUTES); // 10분 후 실행 (테스트는 3초 후 실행)
+        }, 3, TimeUnit.SECONDS); // 테스트 (3초 후 실행)
+        //}, 10, TimeUnit.MINUTES); // 10분 후 실행
     }
 
-    // 알림톡 전송 및 message_send 업데이트
-    public void sendAlimTalkToPartyCreator(Party party) {
+    /**
+     * 알림톡 전송 및 message_send 업데이트
+     */
+    public void sendAlimTalkToPartyCreator(String partyId) {
 
         try {
-            // 파티 생성자 조회
+
+            // Party 및 UserEntity 로드 (파티 생성자 조회)
+            Party party = partyRepository.findByIdWithDatesAndTimeslots(partyId)
+                    .orElseThrow(() -> new IllegalArgumentException("Party not found with ID: " + partyId));
+
+            // 24.11.22) **변경된 부분: Set을 List로 변환**
+            List<DateEntity> dateList = new ArrayList<>(party.getDates()); // Set -> List 변환
+            if (dateList.isEmpty()) {
+                throw new IllegalArgumentException("No dates found for party: " + partyId);
+            }
+
             UserEntity partyCreator = userRepository.findByUserName(party.getUserId())
                     .orElseThrow(() -> new IllegalArgumentException("파티 생성자를 찾을 수 없습니다: " + party.getUserId()));
 
+
+            // KakaoProfile 로드 및 전화번호 확인
             KakaoProfile kakaoProfile = partyCreator.getKakaoProfile();
             if (kakaoProfile == null || kakaoProfile.getPhoneNumber() == null) {
                 throw new IllegalArgumentException("파티 생성자의 전화번호를 찾을 수 없습니다.");
@@ -84,32 +104,36 @@ public class PartyService {
             String phoneNumber = formatPhoneNumber(kakaoProfile.getCountryCode(), kakaoProfile.getPhoneNumber());
 
             // 파티 이름 및 생성자 이름 정의
-            String partyName = party.getPartyName();       // 파티 이름
-            String partyLeaderName = party.getUserId();    // 파티 생성자 이름
+//            String partyName = party.getPartyName();       // 파티 이름
+//            String partyLeaderName = party.getUserId();    // 파티 생성자 이름
 
 
-//            // 1. 모든 가능한 시간대 가져오기
-//            List<AvailableTime> availableTimes = findAvailableTimesForParty(party);
-//
-//            // 2. 상위 3개 시간대 추출
-//            List<String> topTimeSlots = availableTimes.stream()
-//                    .limit(3) // 상위 3개만 선택 (limit(n) : 리스트에 요소가 n개보다 적다면 남은 요소를 그대로 반환)
-//                    .map(availableTime -> String.format("%s - %s",
-//                            availableTime.getStart().toString(),
-//                            availableTime.getEnd().toString())) // 시간대 이름 생성
-//                    .collect(Collectors.toList());
+            // 1. 모든 가능한 시간대 가져오기
+            List<AvailableTime> availableTimes = findAvailableTimesForParty(party);
+
+            // 2. 상위 3개 시간대 추출
+            List<String> topTimeSlots = availableTimes.stream()
+                    .limit(3) // 상위 3개만 선택 (limit(n) : 리스트에 요소가 n개보다 적다면 남은 요소를 그대로 반환)
+                    .map(availableTime -> String.format("%s - %s",
+                            availableTime.getStart().toString(),
+                            availableTime.getEnd().toString())) // 시간대 이름 생성
+                    .collect(Collectors.toList());
 
             // 시간대 전송 테스트용 더미데이터 리스트
-             List<String> topTimeSlots = List.of("시간대 1", "시간대 2", "시간대 3");
+            // List<String> topTimeSlots = List.of("시간대 1", "시간대 2", "시간대 3");
 
             // 3. 알림톡 전송
             try {
-                kakaotalkalarmService.sendVotingCompletionAlimTalk(partyName, partyLeaderName, topTimeSlots, phoneNumber);
+                kakaotalkalarmService.sendVotingCompletionAlimTalk(
+                        party.getPartyName(),
+                        party.getUserId(),
+                        topTimeSlots,
+                        phoneNumber
+                );
                 // party : 현재 파티 객체
                 // topTimeSlots : 시간대 3개 슬라이싱해서 배열로 넘기기 (findAvailableTimesForParty 함수 호출 후 시간대 리스트 받아와서 진행)
                 // -> 일단 빈배열 더미데이터로 진행
                 // phoneNumber : 파티 생성자의 전화번호
-
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
@@ -118,16 +142,16 @@ public class PartyService {
             party.setMessageSend(true);
             partyRepository.save(party);
 
+            System.out.println("알림톡 전송 완료: Party ID: " + partyId);
+
         } catch (LazyInitializationException e) {
-            System.out.println("LazyInitializationException 발생!");
-            System.out.println("Party ID: " + party.getPartyId());
-            System.out.println("예외 메시지: " + e.getMessage());
+            System.err.println("LazyInitializationException 발생: " + e.getMessage());
             e.printStackTrace();
-            throw e; // 예외를 다시 던져 호출자에게 전달
+            throw e;
         } catch (Exception e) {
-            System.out.println("sendAlimTalkToPartyCreator 메서드 실행 중 예외 발생: " + e.getMessage());
+            System.err.println("sendAlimTalkToPartyCreator 실행 중 예외 발생: " + e.getMessage());
             e.printStackTrace();
-            throw e; // 다른 예외도 호출자에게 전달
+            throw e;
         }
     }
 
@@ -383,7 +407,15 @@ public class PartyService {
 
             List<TimeSlot> timeSlots = new ArrayList<>();
 
-            for (DateEntity date : party.getDates()) {
+            // 24.11.22) **추가된 부분: Set을 List로 변환**
+            List<DateEntity> dateList = new ArrayList<>(party.getDates()); // Set -> List 변환
+
+            // 24.11.22) Optional: 정렬이 필요한 경우 (날짜 기준으로 정렬)
+            dateList.sort(Comparator.comparing(DateEntity::getSelected_date));
+
+            // 24.11.22) 기존 코드: for (DateEntity date : party.getDates()) {
+            for (DateEntity date : dateList) {  // 변경된 부분: Set 대신 List 사용
+
                 // date에서 날짜를 가져오고, party에서 시작 및 종료 시간을 가져옴
                 LocalDateTime dateStart = LocalDateTime.ofInstant(date.getSelected_date().toInstant(), zoneId);
 
@@ -391,7 +423,10 @@ public class PartyService {
                 LocalDateTime startTime = dateStart.withHour(partyStartTime.getHour()).withMinute(partyStartTime.getMinute());
                 LocalDateTime endTime = dateStart.withHour(partyEndTime.getHour()).withMinute(partyEndTime.getMinute());
 
-                List<Timeslot> slots = date.getTimeslots();
+                // 24.11.22) **변경된 부분: Set을 List로 변환**
+                List<Timeslot> slots = new ArrayList<>(date.getTimeslots()); // Set -> List 변환
+                // 24.11.22) Optional: 정렬이 필요한 경우 (slotId 기준으로 정렬)
+                slots.sort(Comparator.comparing(Timeslot::getSlotId));
 
                 for (Timeslot slot : slots) {
                     // 비트스트링을 통해 30분 단위로 시간 계산
@@ -545,7 +580,9 @@ public class PartyService {
             existingParty.setUserId(partyUpdateRequest.getUserId());
 
             // 3. DateEntity 업데이트 (기존 리스트를 제거 후 새로 추가)
-            List<DateEntity> existingDates = existingParty.getDates();
+            // List<DateEntity> existingDates = existingParty.getDates();
+            List<DateEntity> existingDates = new ArrayList<>(existingParty.getDates()); // 24.11.22) 에러 시 위 코드 사용, 이건 삭제
+
             dateEntityRepsitory.deleteAll(existingDates); // 기존 날짜 리스트 삭제
 
             List<DateEntity> newDates = new ArrayList<>();
