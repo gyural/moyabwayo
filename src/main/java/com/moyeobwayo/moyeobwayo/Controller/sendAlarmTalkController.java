@@ -24,27 +24,29 @@ public class sendAlarmTalkController {
 
     /**
      * 투표 완료 알림을 보내는 API
-     * @param partyId 파티 ID
+     * @param partyName 파티 이름
+     * @param partyLeaderName 파티 생성자 이름
      * @param to 수신자 전화번호
      * @return 성공 여부
      */
     @PostMapping("/sendVotingCompletion")
     public String sendVotingCompletionAlimTalk(
-            @RequestParam String partyId,
+            @RequestParam String partyName,
+            @RequestParam String partyLeaderName,
             @RequestParam String to) {
 
         try {
-            // 데이터베이스를 사용하지 않고 하드코딩된 파티 정보 생성
-            Party party = getDummyParty(partyId);
-            if (party == null) {
-                return "파티 정보를 찾을 수 없습니다.";
-            }
+//            // 데이터베이스를 사용하지 않고 하드코딩된 파티 정보 생성
+//            Party party = getDummyParty(partyId);
+//            if (party == null) {
+//                return "파티 정보를 찾을 수 없습니다.";
+//            }
 
             // 예시로 상위 3개의 시간대 데이터를 제공 (예: "시간대 1", "시간대 2", "시간대 3")
             List<String> topTimeSlots = List.of("시간대 1", "시간대 2", "시간대 3");
 
             // 알림 전송
-            kakaotalkalarmService.sendVotingCompletionAlimTalk(party, topTimeSlots, to);
+            kakaotalkalarmService.sendVotingCompletionAlimTalk(partyName, partyLeaderName, topTimeSlots, to);
 
             return "투표 완료 알림이 성공적으로 전송되었습니다.";
         } catch (Exception e) {

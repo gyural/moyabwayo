@@ -43,9 +43,12 @@ public class Party {
     //@JsonIgnore  // 순환 참조 방지
     private List<Alarm> alarms;
 
+
     // @OneToMany(mappedBy = "party")
+    // ----------------Lazy Loading의 원흉----------------
     @OneToMany(mappedBy = "party", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DateEntity> dates;
+    // --------------------------------------------------
 
     @PostConstruct
     public void init() {
