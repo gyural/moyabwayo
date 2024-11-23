@@ -7,6 +7,7 @@ import com.moyeobwayo.moyeobwayo.Domain.UserEntity;
 import com.moyeobwayo.moyeobwayo.Domain.response.KakaoUserCreateResponse;
 import com.moyeobwayo.moyeobwayo.Repository.AlarmRepository;
 import com.moyeobwayo.moyeobwayo.Repository.KakaoProfileRepository;
+import com.moyeobwayo.moyeobwayo.Repository.PartyRepository;
 import com.moyeobwayo.moyeobwayo.Repository.UserEntityRepository;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -35,12 +36,14 @@ public class KakaoUserService {
     private final UserEntityRepository userEntityRepository;
     private final AlarmRepository alarmRepository;
     private final JwtService jwtService;
+    private final PartyRepository partyRepository;
 
-    public KakaoUserService(KakaoProfileRepository kakaoProfileRepository, UserEntityRepository userEntityRepository, AlarmRepository alarmRepository, JwtService jwtService) {
+    public KakaoUserService(KakaoProfileRepository kakaoProfileRepository, UserEntityRepository userEntityRepository, AlarmRepository alarmRepository, JwtService jwtService, PartyRepository partyRepository) {
         this.kakaoProfileRepository = kakaoProfileRepository;
         this.userEntityRepository = userEntityRepository;
         this.alarmRepository = alarmRepository;
         this.jwtService = jwtService;
+        this.partyRepository = partyRepository;
     }
     @Value("${KAKAO_REST_KEY}")
     private String KAKAO_REST_KEY;
@@ -425,8 +428,17 @@ public class KakaoUserService {
         // 카카오 프로필과 유저 연결
         userEntity.setKakaoProfile(kakaoProfile);
 
-        // 사용자 이름 업데이트
+        // 새로운 사용자 이름
         String updatedUserName = kakaoProfile.getNickname() + "(" + kakaoUserId + ")";
+
+        // 파티장이라면 이것도 수정해주기
+        Party targetParty = userEntity.getParty();
+        if (targetParty.getUserId() == userEntity.getUserName()){
+            targetParty.setUserId(updatedUserName);
+            partyRepository.save(targetParty);
+        }
+
+        // 사용자 이름 변경
         userEntity.setUserName(updatedUserName);
         userEntityRepository.save(userEntity);  // 유저 저장
 
