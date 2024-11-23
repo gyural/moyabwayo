@@ -2,6 +2,8 @@ package com.moyeobwayo.moyeobwayo.Repository;
 
 import com.moyeobwayo.moyeobwayo.Domain.Party;
 import com.moyeobwayo.moyeobwayo.Domain.UserEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -36,4 +38,7 @@ public interface UserEntityRepository extends JpaRepository<UserEntity, Long> {
     Optional<UserEntity> findByKakaoProfile_KakaoUserId(Long kakaoUserId);
 
     List<UserEntity> findAllByParty_PartyId(String partyId);
+
+    // kakaoUserId 기준으로 UserEntity를 페이징 처리하여 조회
+    Page<UserEntity> findByKakaoProfile_KakaoUserId(Long kakaoUserId, Pageable pageable);
 }
