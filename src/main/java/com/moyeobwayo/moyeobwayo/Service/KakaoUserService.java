@@ -433,7 +433,7 @@ public class KakaoUserService {
 
         // 파티장이라면 이것도 수정해주기
         Party targetParty = userEntity.getParty();
-        if (targetParty.getUserId() == userEntity.getUserName()){
+        if (targetParty.getUserId().equals(userEntity.getUserName())){
             targetParty.setUserId(updatedUserName);
             partyRepository.save(targetParty);
         }
