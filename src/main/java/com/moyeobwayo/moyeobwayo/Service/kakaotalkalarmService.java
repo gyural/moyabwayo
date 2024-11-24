@@ -146,7 +146,7 @@ public class kakaotalkalarmService {
         String topTimeSlot2 = topTimeSlots.size() > 1 ? formatTimeSlot(topTimeSlots.get(1)) : "시간대 없음";
         String topTimeSlot3 = topTimeSlots.size() > 2
                 ? formatTimeSlot(topTimeSlots.get(2)) + "\nhttps://www.moyeobwayo.com/" + partyId
-                : "시간대 없음\nhttps://www.moyeobwayo.com/" + partyId;
+                : "시간대 없음\nhttps://www.moyeobwayo.com/meeting/" + partyId;
 
         String content = String.format(
                         "✨ [투표 완료 알림] ✨\n" +
