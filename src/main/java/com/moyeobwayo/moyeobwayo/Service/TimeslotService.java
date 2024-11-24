@@ -12,6 +12,7 @@ import com.moyeobwayo.moyeobwayo.Repository.UserEntityRepository;
 import com.moyeobwayo.moyeobwayo.Repository.DateEntityRepsitory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,7 +39,10 @@ public class TimeslotService {
     }
 
     // 타임슬롯 생성
+    @Transactional
     public TimeslotResponseDTO createTimeslot(TimeslotRequestDTO dto) {
+        //락킹 트리거라서 초반부에 만듬
+        Party targetParty = dateEntityRepsitory.findPartyByDateIdWithLock((long) dto.getDateId());
         UserEntity user = userEntityRepository.findById((long) dto.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + dto.getUserId()));
         DateEntity date = dateEntityRepsitory.findById((long) dto.getDateId())
@@ -62,29 +66,34 @@ public class TimeslotService {
             timeslot.setUserEntity(user);
             timeslot.setDate(date);
             timeslot.setByteString(dto.getBinaryString());
+            // 기존 타임슬롯을 삭제 (교체)
+            userTimeslotsBefore.removeIf(t -> t.getDate().getDateId().equals((long) dto.getDateId())); // 해당 타임슬롯 제거
         }
+
+        // 새로 생성된 타임슬롯을 리스트에 추가
+        userTimeslotsBefore.add(timeslot);
 
         // 변경된 타임슬롯 저장
         timeslotRepository.save(timeslot);
-
         // userId에 해당하는 모든 타임슬롯을 다시 가져와 변경 후 상태 확인
         List<Timeslot> userTimeslotsAfter = timeslotRepository.findTimeslotsByUserId((long) dto.getUserId());
         boolean hasAnyActiveTimeslotAfter = userTimeslotsAfter.stream().anyMatch(ts -> ts.getByteString().contains("1")); // 변경 후 상태 확인
 
         // current_num 업데이트 로직
-        Party targetParty = date.getParty();
         if (!hadAnyActiveTimeslot && hasAnyActiveTimeslotAfter) { // 0 -> 1: current_num 증가
             targetParty.setCurrentNum(targetParty.getCurrentNum() + 1);
         } else if (hadAnyActiveTimeslot && !hasAnyActiveTimeslotAfter) { // 1 -> 0: current_num 감소
             targetParty.setCurrentNum(targetParty.getCurrentNum() - 1);
         }
 
-        // *****************************
         // 알림톡 관련 : current_num과 target_num 비교 및 알림톡 예약
-        if (targetParty.getCurrentNum() == targetParty.getTargetNum() && !targetParty.isMessageSend()) {
+        if (targetParty.getTargetNum() != 0
+                && targetParty.getCurrentNum() == targetParty.getTargetNum()
+                && !targetParty.isMessageSend()) {
+            targetParty.setMessageSend(true);
+            partyRepository.save(targetParty);
             partyService.scheduleAlimTalk(targetParty);
         }
-        // *****************************
 
         partyRepository.save(targetParty); // 변경된 파티 정보 저장
 

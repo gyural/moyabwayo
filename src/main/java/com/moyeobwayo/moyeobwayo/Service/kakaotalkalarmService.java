@@ -68,6 +68,16 @@ public class kakaotalkalarmService {
             msgObj.put("plusFriendId", plusFriendId);
             msgObj.put("templateCode", templateCode);
 
+            //reserved Time 필드 등록
+            int delayTimeInMinutes = 11;
+            LocalDateTime reserveTime = LocalDateTime.now().plusMinutes(delayTimeInMinutes);
+            // 2. 포맷 지정
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            // 3. reserveTime을 지정된 포맷으로 문자열 변환
+            String formattedTime = reserveTime.format(formatter);
+            // 4. reserveTime을 msgObj에 설정
+            msgObj.put("reserveTime", formattedTime);
+
             // 메시지 내용 구성
             JSONObject messages = new JSONObject();
             messages.put("countryCode", "82");  // 국가 코드
