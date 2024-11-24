@@ -35,7 +35,6 @@ public class Party {
     private String userId; // 새롭게 추가
 
     private boolean messageSend = false; // 메세지 전송 여부
-
     @OneToMany(mappedBy = "party")
     //@JsonIgnore  // 순환 참조 방지
     private List<Alarm> alarms;

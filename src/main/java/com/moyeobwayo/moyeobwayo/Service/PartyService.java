@@ -63,14 +63,11 @@ public class PartyService {
      * 알림톡 예약 전송 10분 (테스트 3초)
      */
     public void scheduleAlimTalk(Party party) {
-        scheduler.schedule(() -> {
-            try {
-                sendAlimTalkToPartyCreator(party.getPartyId());
-            } catch (Exception e) {
-                System.err.println("알림톡 전송 실패: " + e.getMessage());
-            }
-        }, 10 * 60, TimeUnit.SECONDS);
-        //}, 10, TimeUnit.MINUTES); // 10분 후 실행
+        try {
+            sendAlimTalkToPartyCreator(party.getPartyId());
+        } catch (Exception e) {
+            System.err.println("알림톡 전송 실패: " + e.getMessage());
+        }
     }
 
     /**
