@@ -16,6 +16,7 @@ import com.moyeobwayo.moyeobwayo.Domain.dto.AvailableTime;
 import com.moyeobwayo.moyeobwayo.Repository.DecisionRepository; // 추가됨
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -404,10 +405,8 @@ public class PartyService {
 
             List<TimeSlot> timeSlots = new ArrayList<>();
 
-            // 24.11.22) **추가된 부분: Set을 List로 변환**
             List<DateEntity> dateList = new ArrayList<>(party.getDates()); // Set -> List 변환
-
-            // 24.11.22) Optional: 정렬이 필요한 경우 (날짜 기준으로 정렬)
+            //date Entity가 다음날 자정까지 투표를 받으면 한개 더 생김?
             dateList.sort(Comparator.comparing(DateEntity::getSelected_date));
 
             // 24.11.22) 기존 코드: for (DateEntity date : party.getDates()) {
@@ -419,7 +418,10 @@ public class PartyService {
                 // party의 날짜와 시간 합치기
                 LocalDateTime startTime = dateStart.withHour(partyStartTime.getHour()).withMinute(partyStartTime.getMinute());
                 LocalDateTime endTime = dateStart.withHour(partyEndTime.getHour()).withMinute(partyEndTime.getMinute());
-
+                // 자정이면 하루 더하기
+                if (partyEndTime.getHour() == 0 && partyEndTime.getMinute() == 0) {
+                    endTime = endTime.plusDays(1);
+                }
                 // 24.11.22) **변경된 부분: Set을 List로 변환**
                 List<Timeslot> slots = new ArrayList<>(date.getTimeslots()); // Set -> List 변환
                 // 24.11.22) Optional: 정렬이 필요한 경우 (slotId 기준으로 정렬)
