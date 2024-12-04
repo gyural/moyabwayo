@@ -5,7 +5,6 @@ import com.moyeobwayo.moyeobwayo.Domain.dto.TimeSlot;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCompleteRequest;
 import com.moyeobwayo.moyeobwayo.Domain.request.party.PartyCreateRequest;
 import com.moyeobwayo.moyeobwayo.Domain.response.PartyCompleteResponse;
-import com.moyeobwayo.moyeobwayo.Domain.dto.PartyDTO;
 import com.moyeobwayo.moyeobwayo.Repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +15,6 @@ import com.moyeobwayo.moyeobwayo.Domain.dto.AvailableTime;
 import com.moyeobwayo.moyeobwayo.Repository.DecisionRepository; // 추가됨
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,11 +31,9 @@ import java.util.stream.Collectors;
 //import org.springframework.boot.configurationprocessor.json.JSONArray;
 //import org.springframework.boot.configurationprocessor.json.JSONException;
 //import org.springframework.boot.configurationprocessor.json.JSONObject;
-import org.springframework.transaction.annotation.Transactional; // lazy 로딩 문제 해결용
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 // *****************************
 
 @Service
@@ -51,7 +47,7 @@ public class PartyService {
     private final KakaoUserService kakaoUserService;
     private final AlarmRepository alarmRepository;
     private final DecisionRepository decisionRepository;
-    private final kakaotalkalarmService kakaotalkalarmService;
+    private final KakaotalkalarmService kakaotalkalarmService;
 
     // *****************************
     // 알림톡 관련
