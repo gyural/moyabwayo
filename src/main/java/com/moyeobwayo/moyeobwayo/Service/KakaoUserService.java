@@ -9,9 +9,11 @@ import com.moyeobwayo.moyeobwayo.Repository.AlarmRepository;
 import com.moyeobwayo.moyeobwayo.Repository.KakaoProfileRepository;
 import com.moyeobwayo.moyeobwayo.Repository.PartyRepository;
 import com.moyeobwayo.moyeobwayo.Repository.UserEntityRepository;
+import lombok.RequiredArgsConstructor;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ import java.time.ZoneId;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@RequiredArgsConstructor
 public class KakaoUserService {
 
     private final KakaoProfileRepository kakaoProfileRepository;
@@ -37,32 +40,43 @@ public class KakaoUserService {
     private final AlarmRepository alarmRepository;
     private final JwtService jwtService;
     private final PartyRepository partyRepository;
+    private final KakaotalkalarmService kakaotalkalarmService;
+    private final UtilService utilService;
 
-    public KakaoUserService(KakaoProfileRepository kakaoProfileRepository, UserEntityRepository userEntityRepository, AlarmRepository alarmRepository, JwtService jwtService, PartyRepository partyRepository) {
-        this.kakaoProfileRepository = kakaoProfileRepository;
-        this.userEntityRepository = userEntityRepository;
-        this.alarmRepository = alarmRepository;
-        this.jwtService = jwtService;
-        this.partyRepository = partyRepository;
-    }
     @Value("${KAKAO_REST_KEY}")
     private String KAKAO_REST_KEY;
     @Value("${KAKAO_REDIRECT_URI}")
     private String KAKAO_REDIRECT_URI;
-    //UserList중에 카카오 유저만 함수 호출
-    public Map<String, String> sendKakaoCompletMesage(List<UserEntity> users, Party party, Date completeDate) {
+    //UserList중에 카카오 유저만 함수 호출 채널톡
+    public Map<String, String> sendKakaoCompletMesage(List<UserEntity> users,
+                                                      List<String> impossibleUsers,
+                                                      Party party, Date completeDate) {
         Map<String, String> resultMap = new HashMap<>();
 
         for (UserEntity user : users) {
             // 카카오 유저라면 메시지 보내기 (예: 카카오 API 호출)
+            KakaoProfile targetKakaoProfile = user.getKakaoProfile();
+            String phoneNumber = utilService.formatPhoneNumber(targetKakaoProfile.getCountryCode(), targetKakaoProfile.getPhoneNumber());
             if (validateAlarmState(user)) {
-                boolean flag = sendCompleteMessage(user.getKakaoProfile(), party, completeDate);
+                try{
+                    boolean flag = kakaotalkalarmService.sendPartyCompletionAlimTalk(
+                            party.getPartyId(),
+                            party.getPartyName(),
+                            party.getUserId(), // 파티장 이름
+                            completeDate,
+                            users.size(),
+                            impossibleUsers.size(),
+                            phoneNumber);
 
-                // 성공 여부에 따라 결과 맵에 "성공" 또는 "실패"로 저장
-                if (flag) {
-                    resultMap.put(user.getUserName(), "성공");
-                } else {
-                    resultMap.put(user.getUserName(), "실패");
+                    // 성공 여부에 따라 결과 맵에 "성공" 또는 "실패"로 저장
+                    if (flag) {
+                        resultMap.put(user.getUserName(), "성공");
+                    } else {
+                        resultMap.put(user.getUserName(), "실패");
+                    }
+
+                }catch (Exception e){
+                    System.out.println(e.getMessage());
                 }
             } else {
                 // 알람 상태가 유효하지 않은 경우, 실패로 처리
