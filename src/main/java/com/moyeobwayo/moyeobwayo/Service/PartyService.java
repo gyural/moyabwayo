@@ -26,16 +26,6 @@ import java.util.*;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-// *****************************
-// 알림톡 관련
-//import org.springframework.boot.configurationprocessor.json.JSONArray;
-//import org.springframework.boot.configurationprocessor.json.JSONException;
-//import org.springframework.boot.configurationprocessor.json.JSONObject;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-// *****************************
-
 @Service
 @RequiredArgsConstructor
 public class PartyService {
@@ -48,13 +38,6 @@ public class PartyService {
     private final AlarmRepository alarmRepository;
     private final DecisionRepository decisionRepository;
     private final KakaotalkalarmService kakaotalkalarmService;
-
-    // *****************************
-    // 알림톡 관련
-
-    // 스케줄러 초기화
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
 
     /**
      * 알림톡 예약 전송 10분 (테스트 3초)
@@ -77,7 +60,6 @@ public class PartyService {
             Party party = partyRepository.findByIdWithDatesAndTimeslots(partyId)
                     .orElseThrow(() -> new IllegalArgumentException("Party not found with ID: " + partyId));
 
-            // 24.11.22) **변경된 부분: Set을 List로 변환**
             List<DateEntity> dateList = new ArrayList<>(party.getDates()); // Set -> List 변환
             if (dateList.isEmpty()) {
                 throw new IllegalArgumentException("No dates found for party: " + partyId);
@@ -85,7 +67,6 @@ public class PartyService {
 
             UserEntity partyCreator = userRepository.findByUserNameAndParty_PartyId(party.getUserId(), partyId)
                     .orElseThrow(() -> new IllegalArgumentException("파티 생성자를 찾을 수 없습니다: " + party.getUserId()));
-
 
             // KakaoProfile 로드 및 전화번호 확인
             KakaoProfile kakaoProfile = partyCreator.getKakaoProfile();
@@ -95,11 +76,6 @@ public class PartyService {
 
             // 전화번호 가공
             String phoneNumber = formatPhoneNumber(kakaoProfile.getCountryCode(), kakaoProfile.getPhoneNumber());
-
-            // 파티 이름 및 생성자 이름 정의
-//            String partyName = party.getPartyName();       // 파티 이름
-//            String partyLeaderName = party.getUserId();    // 파티 생성자 이름
-
 
             // 1. 모든 가능한 시간대 가져오기
             List<AvailableTime> availableTimes = findAvailableTimesForParty(party);
@@ -165,9 +141,6 @@ public class PartyService {
 
         return formattedNumber; // 형식 예) 01012345678
     }
-
-    // *****************************
-
 
     public void updateAlarmStatus(String partyId, String alarmStatus) {
         // partyId로 Alarm 객체 조회
@@ -255,7 +228,7 @@ public class PartyService {
             // 메시지 전송
             System.out.println("possibleUsers");
             System.out.println(possibleUsers);
-            Map<String, String> userMessageResponse = kakaoUserService.sendKakaoCompletMesage(possibleUsers, party, startTime);
+            Map<String, String> userMessageResponse = kakaoUserService.sendKakaoCompletMesage(possibleUsers, impossibleUsers , party, startTime);
             // 카카오 메시지를 보낼 수 없는 유저들 추가
             for (UserEntity user : possibleUsers) {
                 // 메시지를 보낸 유저만 map에 포함되어 있으므로, 포함되지 않은 유저에게 "카카오 유저가 아님"을 추가

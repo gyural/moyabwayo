@@ -1,9 +1,11 @@
 package com.moyeobwayo.moyeobwayo.Service;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import javax.crypto.Mac;
@@ -31,19 +33,22 @@ public class KakaotalkalarmService {
     private final String ncpSecretKey;
     private final String plusFriendId;
     private final String templateCodeVoteComplete;
+    private final String templateCodePartyComplete;
 
     public KakaotalkalarmService(
             @Value("${NCP_SERVICE_ID}") String serviceID,
             @Value("${NCP_ACCESS_KEY}") String ncpAccessKey,
             @Value("${NCP_SECRET_KEY}") String ncpSecretKey,
             @Value("${NCP_PLUS_FRIEND_ID}") String plusFriendId,
-            @Value("${NCP_TEMPLATE_CODE_VOTE_COMPLETE}") String templateCode
+            @Value("${NCP_TEMPLATE_CODE_VOTE_COMPLETE}") String templateCodeVoteComplete,
+            @Value("${NCP_TEMPLATE_CODE_PARTY_COMPLETE}") String templateCodePartyComplete
             ) {
         this.serviceID = serviceID;
         this.ncpAccessKey = ncpAccessKey;
         this.ncpSecretKey = ncpSecretKey;
         this.plusFriendId = plusFriendId;
-        this.templateCodeVoteComplete = templateCode;
+        this.templateCodeVoteComplete = templateCodeVoteComplete;
+        this.templateCodePartyComplete = templateCodePartyComplete;
     }
 
     public void sendAlimTalk(String to,
@@ -180,11 +185,6 @@ public class KakaotalkalarmService {
         JSONArray buttons = new JSONArray();
         buttons.put(button);
 
-        // 알림 메시지 템플릿 코드 설정
-
-
-        // 예약 시간 계산하기
-
         // 메시지 전송
         sendAlimTalk(
                 to, // 전화번호를 직접 전달
@@ -195,66 +195,67 @@ public class KakaotalkalarmService {
                 GetDelayFormatTime(11)
         );
     }
-    public void sendPartyCompletionAlimTalk(
+    // 파티 확정시 리마인드 알람
+    public boolean sendPartyCompletionAlimTalk(
             String partyId,
             String partyName,
             String partyLeaderName,
-            List<String> topTimeSlots,
+            Date targetDateTime,
+            int possibleNum,
+            int impossibleNum,
             String to) throws JSONException {
 
         partyLeaderName = partyLeaderName.contains("(")
                 ? partyLeaderName.substring(0, partyLeaderName.indexOf("(")).trim()
                 : partyLeaderName;
 
-        String topTimeSlot1 = topTimeSlots.size() > 0 ? formatTimeSlot(topTimeSlots.get(0)) : "시간대 없음";
-        String topTimeSlot2 = topTimeSlots.size() > 1 ? formatTimeSlot(topTimeSlots.get(1)) : "시간대 없음";
-        String topTimeSlot3 = topTimeSlots.size() > 2
-                ? formatTimeSlot(topTimeSlots.get(2)) + "\nhttps://www.moyeobwayo.com/meeting/" + partyId
-                : "시간대 없음\nhttps://www.moyeobwayo.com/meeting/" + partyId;
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM월 dd일");
+        String targetDate = dateFormat.format(targetDateTime);
+        // 시간 부분: "HH시 mm분"
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH시 mm분");
+        String targetTime = timeFormat.format(targetDateTime);
 
         String content = String.format(
-                "✨ [투표 완료 알림] ✨\n" +
-                        "%s 모임의 투표가 완료되었습니다! 🎉\n" +
-                        "\n" +
-                        "파티장 %s 님이 개설한 모임이 투표 완료 되었어요. 🎈\n" +
-                        "참여가 가장 많은 시간대 3가지를 알려드립니다:\n" +
-                        "\n" +
-                        "1. 🕒 %s\n" +
-                        "2. 🕒 %s\n" +
-                        "3. 🕒 %s\n" +
-                        "\n" +
-                        "자세한 일정은 아래 버튼을 통해 확인해 주세요! 📅\n" +
-                        "\n" +
-                        "👇 지금 바로 확인하기 👇\n" +
-                        "[모임 확인하기]",
-                partyName, partyLeaderName, topTimeSlot1, topTimeSlot2, topTimeSlot3
+                "[모여봐요] 📅 모임이 확정되었어요!\n" +
+                        "안녕하세요! 🎉 드디어 모임 일정이 확정되었습니다. 아래 내용을 확인해주세요!\n\n" +
+                        "✅ 확정된 모임 정보\n" +
+                        "• 모임 이름: %s\n" +  // partyName
+                        "• 모임 이름: %s\n" +      // partyLeaderName
+                        "• 날짜: %s\n" +        // targetDate (예: 모임 날짜)
+                        "• 시간: %s\n\n" +      // targetTime (예: 모임 시간)
+
+                        "📊 참여 현황\n" +
+                        "• 참여 가능 인원: %s명\n" +  // possibleNum (참여 가능한 인원 수)
+                        "• 참여 불가능 인원: %s명\n\n" +  // notPossibleNum (참여 불가능 인원 수)
+
+                        "⏰ 리마인드 알림\n" +
+                        "모임 당일 [1시간 전] 다시 한번 알림을 드릴게요! 잊지 말고 준비해주세요 😊\n\n" +
+
+                        "📍모임 세부 정보 확인 및 참여 관리:\n" +
+                        "%s\n\n" +  // partyURL (모임 세부 정보 URL)
+
+                        "모임과 관련해 궁금한 점이 있다면 언제든 알려주세요.\n" +
+                        "그럼 모임 날 뵙겠습니다! 🎈\n\n" +
+                        "“모여봐요” 팀 드림",
+                partyName, partyLeaderName, targetDate, targetTime, possibleNum, impossibleNum,
+                "https://www.moyeobwayo.com/meeting/"+partyId
         );
 
-        // 버튼 생성 (모임 확인하기 버튼)
-        JSONObject button = new JSONObject();
-        button.put("type", "WL"); // 변경된 부분
-        button.put("name", "모여봐요");
-        button.put("linkMobile", "https://www.moyeobwayo.com/"+partyId);
-        button.put("linkPc", "https://www.moyeobwayo.com/"+partyId);
-
-        // 버튼 배열 생성
-        JSONArray buttons = new JSONArray();
-        buttons.put(button);
-
-        // 알림 메시지 템플릿 코드 설정
-
-
-        // 예약 시간 계산하기
-
-        // 메시지 전송
-        sendAlimTalk(
-                to, // 전화번호를 직접 전달
-                templateCodeVoteComplete, // 템플릿 코드
-                content, // 메시지 내용
-                buttons, // 버튼 배열 추가
-                true, // 예약 메시지 O
-                GetDelayFormatTime(11)
-        );
+        try{
+            // 메시지 전송
+            sendAlimTalk(
+                    to, // 전화번호를 직접 전달
+                    templateCodePartyComplete, // 템플릿 코드
+                    content, // 메시지 내용
+                    null, // 버튼 배열 추가
+                    false, // 예약 메시지 X
+                    GetDelayFormatTime(11)
+            );
+            return true;
+        } catch (Exception e){
+            System.out.println(e);
+            return false;
+        }
     }
     private static String GetDelayFormatTime(int delayTimeInMinutes){
         LocalDateTime reserveTime = LocalDateTime.now().plusMinutes(delayTimeInMinutes);
