@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
@@ -63,7 +62,6 @@ public class KakaotalkalarmService {
                              JSONArray buttons,
                              boolean isReservedMessage,
                              String targetDateTime
-
     ) {
         String alimTalkSendRequestUrl = "https://sens.apigw.ntruss.com/alimtalk/v2/services/" + serviceID + "/messages";
         String alimTalkSignatureRequestUrl = "/alimtalk/v2/services/" + serviceID + "/messages";
@@ -87,8 +85,6 @@ public class KakaotalkalarmService {
             msgObj.put("plusFriendId", plusFriendId);
             msgObj.put("templateCode", templateCode);
 
-
-
             // 메시지 내용 구성
             JSONObject messages = new JSONObject();
             messages.put("countryCode", "82");  // 국가 코드
@@ -100,10 +96,6 @@ public class KakaotalkalarmService {
                 //reserveTime이
                 msgObj.put("reserveTime", targetDateTime);
             }
-            // 두 개 이상의 항목을 가진 리스트를 추가하여 오류 해결
-            JSONArray list = new JSONArray();
-            list.put(new JSONObject().put("title", "모임 시간").put("description", "test"));
-            list.put(new JSONObject().put("title", "모임 장소").put("description", "서울 강남구"));
 
             // 버튼 추가
             if (buttons != null) {
@@ -116,12 +108,6 @@ public class KakaotalkalarmService {
 
             // 메시지 배열을 메시지 객체에 포함
             msgObj.put("messages", messageArray);
-
-            // 예약 시간과 타임존 설정 (필요시 추가)
-
-            // 바디 출력
-            System.out.println("Request Body:");
-            System.out.println(msgObj.toString());
 
             // API 전송 값 http 객체에 담기
             httpPost.setEntity(new StringEntity(msgObj.toString(), "UTF-8"));
@@ -199,7 +185,7 @@ public class KakaotalkalarmService {
                 content, // 메시지 내용
                 buttons, // 버튼 배열 추가
                 true, // 예약 메시지 O
-                GetDelayFormatTime(11)
+                GetDelayFormatTime(11) //쓸데없는 더미값임
         );
     }
     // 파티 확정시 리마인드 알람
@@ -258,8 +244,8 @@ public class KakaotalkalarmService {
                     false, // 예약 메시지 X
                     GetDelayFormatTime(11)
             );
-            // 리마인드 알람 예약 등록
-            int subtractminutes  = 25;
+            // 리마인드 알람 : 약속시간 1시간전 예약 등록
+            int subtractminutes  = 60;
             ReservePartyReminderAlimTalk(
                     partyId, partyName, partyLeaderName, targetDateTime,
                     possibleNum, impossibleNum, subtractminutes, to);
@@ -389,9 +375,6 @@ public class KakaotalkalarmService {
 
             result[0] = timeStamp;
             result[1] = encodeBase64String;
-
-            System.out.println("Timestamp: " + timeStamp);
-            System.out.println("Signature: " + encodeBase64String);
 
         } catch (Exception ex) {
             ex.printStackTrace();

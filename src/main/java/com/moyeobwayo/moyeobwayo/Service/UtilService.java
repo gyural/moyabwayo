@@ -51,8 +51,9 @@ public class UtilService {
 
         // 3. 현재 시간 구하기 (KST 기준)
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
-
-        // 4. 조정된 시간이 현재 시간보다 이른지 판별
+        // 4. 현재 시간에서 11분 빼기
+        LocalDateTime adjustedNow = now.minusMinutes(11);
+        // 4. 조정된 시간이 현재 시간보다 11분뺀것(네이버 클라우드 메뉴얼)이 이른지 판별
         return adjustedTime.isBefore(now);
     }
 }
