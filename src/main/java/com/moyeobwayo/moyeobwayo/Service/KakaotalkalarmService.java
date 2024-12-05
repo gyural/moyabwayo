@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
@@ -34,6 +35,8 @@ public class KakaotalkalarmService {
     private final String plusFriendId;
     private final String templateCodeVoteComplete;
     private final String templateCodePartyComplete;
+    private final String templateCodePartyRemind;
+    private final UtilService utilService;
 
     public KakaotalkalarmService(
             @Value("${NCP_SERVICE_ID}") String serviceID,
@@ -41,14 +44,17 @@ public class KakaotalkalarmService {
             @Value("${NCP_SECRET_KEY}") String ncpSecretKey,
             @Value("${NCP_PLUS_FRIEND_ID}") String plusFriendId,
             @Value("${NCP_TEMPLATE_CODE_VOTE_COMPLETE}") String templateCodeVoteComplete,
-            @Value("${NCP_TEMPLATE_CODE_PARTY_COMPLETE}") String templateCodePartyComplete
-            ) {
+            @Value("${NCP_TEMPLATE_CODE_PARTY_COMPLETE}") String templateCodePartyComplete,
+            @Value("${NCP_TEMPLATE_CODE_PARTY_REMIND}") String templateCodePartyRemind,
+            UtilService utilService) {
         this.serviceID = serviceID;
         this.ncpAccessKey = ncpAccessKey;
         this.ncpSecretKey = ncpSecretKey;
         this.plusFriendId = plusFriendId;
         this.templateCodeVoteComplete = templateCodeVoteComplete;
         this.templateCodePartyComplete = templateCodePartyComplete;
+        this.templateCodePartyRemind = templateCodePartyRemind;
+        this.utilService = utilService;
     }
 
     public void sendAlimTalk(String to,
@@ -91,6 +97,7 @@ public class KakaotalkalarmService {
 
             //reserved Time 필드 등록
             if (isReservedMessage){
+                //reserveTime이
                 msgObj.put("reserveTime", targetDateTime);
             }
             // 두 개 이상의 항목을 가진 리스트를 추가하여 오류 해결
@@ -251,10 +258,78 @@ public class KakaotalkalarmService {
                     false, // 예약 메시지 X
                     GetDelayFormatTime(11)
             );
+            // 리마인드 알람 예약 등록
+            int subtractminutes  = 25;
+            ReservePartyReminderAlimTalk(
+                    partyId, partyName, partyLeaderName, targetDateTime,
+                    possibleNum, impossibleNum, subtractminutes, to);
             return true;
         } catch (Exception e){
             System.out.println(e);
             return false;
+        }
+    }
+    //파티 확정시간 N시간전 보내는 리마인드 알림 등록하기
+    public void ReservePartyReminderAlimTalk(String partyId,
+                                             String partyName,
+                                             String partyLeaderName,
+                                             Date targetDateTime,
+                                             int possibleNum,
+                                             int impossibleNum,
+                                             int subtractMinutes, // 몇분전에 예약을 할건지 정하기
+                                             String to) throws JSONException
+    {
+        // 리마인드 시간보다 현재시간이 이르다면 알림을 전송할 수 업으므로 종료
+        if (utilService.isTimeEarlierThanNow(targetDateTime, subtractMinutes)){
+            return;
+        }
+        partyLeaderName = partyLeaderName.contains("(")
+                ? partyLeaderName.substring(0, partyLeaderName.indexOf("(")).trim()
+                : partyLeaderName;
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM월 dd일");
+        String targetDate = dateFormat.format(targetDateTime);
+        // 시간 부분: "HH시 mm분"
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH시 mm분");
+        String targetTime = timeFormat.format(targetDateTime);
+
+        String content = String.format(
+                "[모여봐요] ⏰ 모임이 곧 시작됩니다!\n" +
+                        "안녕하세요! 🎉 드디어 기다리던 모임 시간이 가까워졌습니다. 아래 정보를 다시 한번 확인해주세요!\n\n" +
+
+                        "✅ 모임 세부 정보\n" +
+                        "• 모임 이름: %s\n" +  // partyName
+                        "• 모임장 이름: %s\n" +      // partyLeaderName
+                        "• 날짜: %s\n" +        // targetDate (예: 모임 날짜)
+                        "• 시간: %s\n\n" +      // targetTime (예: 모임 시간)
+
+                        "📊 현재 참여 현황\n" +
+                        "• 참여 가능 인원: %s명\n" +  // possibleNum (참여 가능한 인원 수)
+                        "• 참여 불가능 인원: %s명\n\n" +  // impossibleNum (참여 불가능 인원 수)
+
+                        "📍모임 세부 정보 확인 및 참여 관리:\n" +
+                        "%s\n\n" +  // partyURL (모임 세부 정보 URL)
+
+                        "모임 시작 전 필요한 준비물을 챙기고, 즐거운 시간을 보내세요!\n" +
+                        "궁금한 점이 있다면 언제든 알려주세요. 😊\n\n" +
+
+                        "“모여봐요” 팀 드림",
+                partyName, partyLeaderName, targetDate, targetTime, possibleNum, impossibleNum,
+                "https://www.moyeobwayo.com/meeting/" + partyId
+        );
+
+        try{
+            // 메시지 전송
+            sendAlimTalk(
+                    to, // 전화번호를 직접 전달
+                    templateCodePartyRemind, // 템플릿 코드
+                    content, // 메시지 내용
+                    null, // 버튼 배열 추가
+                    true, // 예약 메시지 O
+                    utilService.subtractMinutesFromCompleteTime(targetDateTime, subtractMinutes)
+            );
+        } catch (Exception e){
+            System.out.println(e);
         }
     }
     private static String GetDelayFormatTime(int delayTimeInMinutes){
@@ -265,20 +340,7 @@ public class KakaotalkalarmService {
         String formattedTime = reserveTime.format(formatter);
         return formattedTime;
     }
-    private static String convertAndFormatTime(String completeTimeInIsoTime, int minutesToSubtract) {
-        // 1. ISO 8601 문자열을 LocalDateTime으로 변환 (UTC 기준)
-        LocalDateTime utcTime = LocalDateTime.parse(completeTimeInIsoTime.substring(0, completeTimeInIsoTime.length() - 1));
 
-        // 2. 한국 시간 (UTC + 9)으로 변환
-        LocalDateTime kstTime = utcTime.plusHours(9);
-
-        // 3. 지정된 분(minutesToSubtract)만큼 시간에서 빼기
-        LocalDateTime adjustedTime = kstTime.minusMinutes(minutesToSubtract);
-
-        // 4. 결과를 지정된 포맷으로 문자열 변환
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-        return adjustedTime.format(formatter);
-    }
     private static String formatTimeSlot(String timeslot) {
         // Split the timeslot into start and end times
         String[] parts = timeslot.split(" - ");
