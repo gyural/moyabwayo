@@ -266,20 +266,24 @@ public class PartyService {
     public List<UserEntity> getPossibleUsers(Party party, Date targetDate, Date endDate, Long dateId) throws Exception {
         // DateID 조회
         Integer targetDateID = dateEntityRepsitory.findDateIdByPartyAndSelectedDate(party.getPartyId(), targetDate);  // 이제 String으로 처리
-        if (targetDateID == null) {
-
-            return new ArrayList<>();  // 빈 배열 반환
-        }
+        if (targetDateID == null) { return new ArrayList<>();}  // 빈 배열 반환}
         // 특정 시간 범위 안에 있는 UserEntity 조회
         int partyStartMinutes = party.getStartDate().getHours() * 60 + party.getStartDate().getMinutes();
+        System.out.println("partyStartMinutes: " + partyStartMinutes);
         int descisionStartMinutes = targetDate.getHours() * 60 + targetDate.getMinutes();
-        int descisionEndMinutes = endDate.getHours() * 60 + endDate.getMinutes();
+        System.out.println("descisionStartMinutes: " + descisionStartMinutes);
+        int descisionEndMinutes = (endDate.getHours() == 0 ? 24 : endDate.getHours()) * 60 + endDate.getMinutes();
+        System.out.println("descisionEndMinutes: " + descisionEndMinutes);
 
         // 시작 및 종료 인덱스 계산 (30분 단위로 인덱스 변환)
         int startIndex = (descisionStartMinutes - partyStartMinutes) / 30;
         int endIndex = (descisionEndMinutes - partyStartMinutes) / 30;
         // 애내의 시간 차이 x2 가 byteString의 총길이이고 이때 targetDate ~ endDate -1 인덱스룰 구해야해
         List<Timeslot> timeslots = timeslotRepository.findAllByDateId(dateId);
+        System.out.println("about timeslots");
+        System.out.println(timeslots.size());
+        System.out.println(startIndex);
+        System.out.println(endIndex);
 
         return  filterUsersByByteString(timeslots, startIndex, endIndex);
     }
