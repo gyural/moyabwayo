@@ -227,7 +227,7 @@ public class KakaotalkalarmService {
                         "안녕하세요! 🎉 드디어 모임 일정이 확정되었습니다. 아래 내용을 확인해주세요!\n\n" +
                         "✅ 확정된 모임 정보\n" +
                         "• 모임 이름: %s\n" +  // partyName
-                        "• 모임 이름: %s\n" +      // partyLeaderName
+                        "• 모임장: %s\n" +      // partyLeaderName
                         "• 날짜: %s\n" +        // targetDate (예: 모임 날짜)
                         "• 시간: %s\n\n" +      // targetTime (예: 모임 시간)
 
