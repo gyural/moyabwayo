@@ -56,6 +56,9 @@ public class KakaoUserService {
         for (UserEntity user : users) {
             // 카카오 유저라면 메시지 보내기 (예: 카카오 API 호출)
             KakaoProfile targetKakaoProfile = user.getKakaoProfile();
+            if (targetKakaoProfile == null){
+                continue;
+            }
             String phoneNumber = utilService.formatPhoneNumber(targetKakaoProfile.getCountryCode(), targetKakaoProfile.getPhoneNumber());
             if (validateAlarmState(user)) {
                 try{
